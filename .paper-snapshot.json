@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "timestamp": "2026-03-12T00:00:00.000Z",
+  "artboards": {
+    "1-0": {
+      "name": "Landing",
+      "codeFiles": ["app/page.tsx"],
+      "jsx": "(\n    <div style={{ backgroundColor: '#0A0A0A', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', fontSize: '12px', fontSynthesis: 'none', height: '844px', lineHeight: '16px', MozOsxFontSmoothing: 'grayscale', overflow: 'clip', WebkitFontSmoothing: 'antialiased', width: '390px' }}>\n      <div style={{ alignItems: 'center', boxSizing: 'border-box', display: 'flex', flexBasis: '0%', flexDirection: 'column', flexGrow: '1', flexShrink: '1', gap: '20px', justifyContent: 'center', paddingBottom: '32px', paddingLeft: '24px', paddingRight: '24px', paddingTop: '48px' }}>\n        <div style={{ boxSizing: 'border-box', color: '#000000', fontFamily: 'system-ui, sans-serif', fontSize: '64px', lineHeight: 'round(up, 100%, 1px)', textAlign: 'center' }}>\n          ✈️\n        </div>\n        <div style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '10px' }}>\n          <div style={{ boxSizing: 'border-box', color: '#F0EDE8', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '42px', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 'round(up, 105%, 1px)', textAlign: 'center' }}>\n            PackList\n          </div>\n          <div style={{ boxSizing: 'border-box', color: '#706E6A', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '16px', lineHeight: 'round(up, 155%, 1px)', maxWidth: '280px', textAlign: 'center' }}>\n            Smart packing checklists for every trip. Weather-aware, reminder-powered.\n          </div>\n        </div>\n      </div>\n      <div style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '56px', paddingLeft: '24px', paddingRight: '24px' }}>\n        <div style={{ backgroundColor: '#3B82F6', borderRadius: '12px', boxSizing: 'border-box', paddingBlock: '16px', paddingInline: '16px' }}>\n          <div style={{ boxSizing: 'border-box', color: '#FFFFFF', display: 'inline-block', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.01em', lineHeight: '20px', textAlign: 'center', width: '100%' }}>\n            Get started\n          </div>\n        </div>\n        <div style={{ borderColor: '#262626', borderRadius: '12px', borderStyle: 'solid', borderWidth: '1.5px', boxSizing: 'border-box', paddingBlock: '16px', paddingInline: '16px' }}>\n          <div style={{ boxSizing: 'border-box', color: '#F0EDE8', display: 'inline-block', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.01em', lineHeight: '20px', textAlign: 'center', width: '100%' }}>\n            Sign in\n          </div>\n        </div>\n        <div style={{ boxSizing: 'border-box', color: '#706E6A', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '12px', lineHeight: '16px', marginTop: '4px', textAlign: 'center' }}>\n          Free to use. No credit card required.\n        </div>\n      </div>\n    </div>\n  )"
+    },
+    "D-0": {
+      "name": "Login",
+      "codeFiles": ["app/(auth)/login/page.tsx"],
+      "jsx": "(\n    <div style={{ backgroundColor: '#0A0A0A', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', fontSize: '12px', fontSynthesis: 'none', height: '844px', lineHeight: '16px', MozOsxFontSmoothing: 'grayscale', overflow: 'clip', WebkitFontSmoothing: 'antialiased', width: '390px' }}>\n      <div style={{ alignItems: 'center', boxSizing: 'border-box', display: 'flex', flexBasis: '0%', flexDirection: 'column', flexGrow: '1', flexShrink: '1', gap: '32px', justifyContent: 'center', paddingBlock: '48px', paddingInline: '24px' }}>\n        <div style={{ alignItems: 'center', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '12px' }}>\n          <div style={{ boxSizing: 'border-box', color: '#000000', fontFamily: 'system-ui, sans-serif', fontSize: '48px', lineHeight: 'round(up, 100%, 1px)', textAlign: 'center' }}>\n            ✈️\n          </div>\n          <div style={{ boxSizing: 'border-box', color: '#F0EDE8', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: '34px', textAlign: 'center' }}>\n            Welcome to PackList\n          </div>\n          <div style={{ boxSizing: 'border-box', color: '#706E6A', fontFamily: '\"Inter\", system-ui, sans-serif', fontSize: '14px', lineHeight: '18px', textAlign: 'center' }}>\n            Sign in to manage your travel checklists\n          </div>\n        </div>\n      </div>\n    </div>\n  )"
+    },
+    "W-0": {
+      "name": "Trips — Empty",
+      "codeFiles": ["app/(app)/trips/page.tsx"],
+      "jsx": "trips-empty-jsx"
+    },
+    "20-0": {
+      "name": "New Trip — Step 1",
+      "codeFiles": ["components/trips/trip-form.tsx"],
+      "jsx": "new-trip-step1-jsx"
+    },
+    "3R-0": {
+      "name": "Reminders",
+      "codeFiles": ["app/(app)/reminders/page.tsx"],
+      "jsx": "reminders-jsx"
+    },
+    "3S-0": {
+      "name": "Settings",
+      "codeFiles": ["app/(app)/settings/page.tsx", "components/settings/settings-form.tsx"],
+      "jsx": "settings-jsx"
+    }
+  }
+}
