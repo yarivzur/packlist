@@ -62,6 +62,9 @@ export const users = pgTable("users", {
   phone: text("phone"),
   timezone: text("timezone").default("UTC").notNull(),
   locale: text("locale").default("en").notNull(),
+  theme: text("theme").default("system").notNull(),   // 'system' | 'light' | 'dark'
+  nationality: text("nationality"),                   // ISO 3166-1 alpha-2 (passport country)
+  homeCountry: text("home_country"),                  // ISO 3166-1 alpha-2 (resident country / plug type)
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -114,6 +117,7 @@ export const trips = pgTable("trips", {
   status: tripStatusEnum("status").notNull().default("active"),
   reviewed: boolean("reviewed").notNull().default(false),
   weatherDataJson: jsonb("weather_data_json"),
+  visaDataJson: jsonb("visa_data_json"),              // cached visa check result
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });

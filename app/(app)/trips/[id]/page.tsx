@@ -12,6 +12,7 @@ import { CATEGORY_ORDER } from "@/lib/domain/checklists/templates";
 import type { ChecklistCategory } from "@/lib/domain/checklists/templates";
 import { countryCodeToFlag } from "@/lib/utils/country-flag";
 import type { WeatherData } from "@/lib/domain/weather/open-meteo";
+import type { VisaCheckResult } from "@/lib/domain/visa/visa-check";
 
 function getWeatherTip(bucket: string, rainProbability: number): string {
   const highRain = rainProbability > 0.5;
@@ -56,6 +57,7 @@ export default async function TripDetailPage({
   const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
   const weather = trip.weatherDataJson as WeatherData | null;
+  const visa = trip.visaDataJson as VisaCheckResult | null;
   const flag = countryCodeToFlag(trip.destinationCountry);
 
   return (
@@ -86,6 +88,24 @@ export default async function TripDetailPage({
         <Badge variant="secondary" className="capitalize">{trip.type}</Badge>
         {trip.baggageMode !== "unknown" && (
           <Badge variant="outline" className="capitalize">{trip.baggageMode}</Badge>
+        )}
+        {/* Visa status badge */}
+        {visa && (
+          <span
+            className={[
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+              visa.status === "green" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+              visa.status === "yellow" && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+              visa.status === "red" && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+            ].filter(Boolean).join(" ")}
+            title={visa.notes}
+          >
+            <span aria-hidden>
+              {visa.status === "green" ? "🟢" : visa.status === "yellow" ? "🟡" : "🔴"}
+            </span>
+            {visa.label}
+            {visa.maxStay && ` · up to ${visa.maxStay} days`}
+          </span>
         )}
       </div>
 

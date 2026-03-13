@@ -9,6 +9,9 @@ const updateSchema = z.object({
   timezone: z.string().optional(),
   locale: z.string().optional(),
   phone: z.string().optional().nullable(),
+  theme: z.enum(["system", "light", "dark"]).optional(),
+  nationality: z.string().length(2).toUpperCase().optional().nullable(),
+  homeCountry: z.string().length(2).toUpperCase().optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest) {

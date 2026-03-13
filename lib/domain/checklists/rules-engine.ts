@@ -1,4 +1,5 @@
 import type { WeatherData } from "@/lib/domain/weather/open-meteo";
+import { visaChecklistItems, type VisaCheckResult } from "@/lib/domain/visa/visa-check";
 import {
   BASE_ITEMS,
   INTERNATIONAL_ITEMS,
@@ -19,6 +20,8 @@ export interface RulesInput {
   baggage: "carry-on" | "checked" | "unknown";
   weather: WeatherData | null;
   destination?: string;
+  /** Pre-computed visa check result to inject items (optional) */
+  visaResult?: VisaCheckResult | null;
 }
 
 export interface GeneratedItem {
@@ -65,7 +68,7 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
     deduplicated = deduplicateItems(items);
   }
 
-  return deduplicated
+  const templateResults = deduplicated
     .sort((a, b) => a.priority - b.priority)
     .map((item) => {
       const { quantity, rationale } = calculateQuantity(item.id, input);
@@ -78,6 +81,22 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
         rationale,
       };
     });
+
+  // Inject visa checklist items (crucial category, highest priority)
+  if (input.isInternational && input.visaResult) {
+    const visaItems = visaChecklistItems(input.visaResult).map((v) => ({
+      text: v.text,
+      category: "crucial" as ChecklistCategory,
+      priority: v.priority,
+      sourceRule: v.sourceRule,
+      quantity: 1,
+      rationale: v.rationale,
+    }));
+    // Prepend visa items; they have priority 1-5 which sorts before template items
+    return [...visaItems, ...templateResults];
+  }
+
+  return templateResults;
 }
 
 // ─── Quantity engine ──────────────────────────────────────────────────────────

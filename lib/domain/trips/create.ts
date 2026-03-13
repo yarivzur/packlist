@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { trips, checklistItems } from "@/lib/db/schema";
 import { fetchWeatherForTrip, geocodeDestination } from "@/lib/domain/weather/open-meteo";
 import { generateChecklist, detectIfInternational } from "@/lib/domain/checklists/rules-engine";
+import { checkVisa } from "@/lib/domain/visa/visa-check";
 import { scheduleRemindersForTrip } from "@/lib/domain/reminders/schedule";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
@@ -14,6 +15,10 @@ export interface CreateTripInput {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   baggageMode: "carry-on" | "checked" | "unknown";
+  /** User's passport country (ISO 3166-1 alpha-2). Used for visa check. */
+  userNationality?: string | null;
+  /** User's home country (ISO 3166-1 alpha-2). Used for power adapter check. */
+  userHomeCountry?: string | null;
 }
 
 export async function createTrip(input: CreateTripInput) {
@@ -27,28 +32,41 @@ export async function createTrip(input: CreateTripInput) {
     input.endDate
   );
 
-  // 3. Insert trip
+  // 3. Determine destination country code (from explicit input, geocoder, or weather)
+  const destinationCountry =
+    input.destinationCountry ?? geo?.country_code ?? weather?.countryCode ?? null;
+
+  // 4. Visa check (only for international trips with known nationality + destination)
+  const isInternational = detectIfInternational(
+    input.userNationality ?? undefined,
+    destinationCountry
+  );
+
+  let visaResult = null;
+  if (isInternational && input.userNationality && destinationCountry) {
+    visaResult = checkVisa(input.userNationality, destinationCountry);
+  }
+
+  // 5. Insert trip
   const [trip] = await db
     .insert(trips)
     .values({
       userId: input.userId,
       type: input.type,
       destinationText: input.destinationText,
-      // Geocoded values are always available; weather values are a fallback
-      destinationCountry: input.destinationCountry ?? geo?.country_code ?? weather?.countryCode,
+      destinationCountry,
       destinationCity: input.destinationCity ?? geo?.name ?? weather?.cityName,
       startDate: input.startDate,
       endDate: input.endDate,
       baggageMode: input.baggageMode,
       weatherDataJson: weather ?? undefined,
+      visaDataJson: visaResult ?? undefined,
     })
     .returning();
 
-  // 4. Generate checklist
+  // 6. Generate checklist (includes visa items when available)
   const durationDays =
     differenceInCalendarDays(parseISO(input.endDate), parseISO(input.startDate)) + 1;
-
-  const isInternational = detectIfInternational(undefined, input.destinationCountry);
 
   const generatedItems = generateChecklist({
     tripType: input.type,
@@ -57,9 +75,10 @@ export async function createTrip(input: CreateTripInput) {
     baggage: input.baggageMode,
     weather,
     destination: input.destinationText,
+    visaResult,
   });
 
-  // 5. Insert checklist items
+  // 7. Insert checklist items
   if (generatedItems.length > 0) {
     await db.insert(checklistItems).values(
       generatedItems.map((item) => ({
@@ -75,7 +94,7 @@ export async function createTrip(input: CreateTripInput) {
     );
   }
 
-  // 6. Schedule reminders
+  // 8. Schedule reminders
   await scheduleRemindersForTrip(trip.id, input.startDate, "UTC");
 
   return trip;

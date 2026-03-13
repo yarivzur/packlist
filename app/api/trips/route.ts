@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { trips } from "@/lib/db/schema";
+import { trips, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { createTrip, type CreateTripInput } from "@/lib/domain/trips/create";
 import { z } from "zod";
@@ -55,9 +55,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Fetch user's nationality + homeCountry for visa / power-adapter checks
+  const [user] = await db.select().from(users).where(eq(users.id, session.user.id));
+
   const input: CreateTripInput = {
     userId: session.user.id,
     ...parsed.data,
+    userNationality: user?.nationality ?? null,
+    userHomeCountry: user?.homeCountry ?? null,
   };
 
   const trip = await createTrip(input);
