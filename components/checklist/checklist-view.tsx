@@ -182,7 +182,8 @@ export function ChecklistView({ tripId, grouped, reviewed }: ChecklistViewProps)
                     onClick={() => !isReview && toggleItem(item)}
                     disabled={isReview}
                     className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      "relative flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors",
+                      "before:absolute before:-inset-2.5 before:content-['']",
                       item.done
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-muted-foreground/40",
@@ -333,7 +334,8 @@ function CategoryGroup({ category, items, isReview, onToggle, onDelete }: Catego
                   onClick={() => !isReview && onToggle(item)}
                   disabled={isReview}
                   className={cn(
-                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                    "relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors",
+                    "before:absolute before:-inset-2.5 before:content-['']",
                     item.done
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-muted-foreground/40",

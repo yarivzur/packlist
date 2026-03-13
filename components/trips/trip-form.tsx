@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Check } from "lucide-react";
 
 type TripType = "business" | "leisure" | "mixed";
 type BaggageMode = "carry-on" | "checked" | "unknown";
@@ -109,10 +109,15 @@ export function TripForm() {
                   key={opt.value}
                   onClick={() => setData((d) => ({ ...d, type: opt.value }))}
                   className={cn(
-                    "flex items-start gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-accent",
-                    data.type === opt.value && "border-primary bg-primary/5"
+                    "relative flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all",
+                    data.type === opt.value
+                      ? "border-primary bg-primary/10 dark:bg-primary/15"
+                      : "border-input hover:bg-accent"
                   )}
                 >
+                  {data.type === opt.value && (
+                    <Check className="absolute top-3 right-3 h-4 w-4 text-primary" />
+                  )}
                   <span className="text-2xl">{opt.label.split(" ")[0]}</span>
                   <div>
                     <div className="font-medium">{opt.label.split(" ").slice(1).join(" ")}</div>
@@ -164,7 +169,7 @@ export function TripForm() {
                   value={data.startDate}
                   min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setData((d) => ({ ...d, startDate: e.target.value }))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="space-y-2">
@@ -177,7 +182,7 @@ export function TripForm() {
                   value={data.endDate}
                   min={data.startDate || new Date().toISOString().split("T")[0]}
                   onChange={(e) => setData((d) => ({ ...d, endDate: e.target.value }))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
             </div>
@@ -200,10 +205,15 @@ export function TripForm() {
                   key={opt.value}
                   onClick={() => setData((d) => ({ ...d, baggageMode: opt.value }))}
                   className={cn(
-                    "flex items-start gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-accent",
-                    data.baggageMode === opt.value && "border-primary bg-primary/5"
+                    "relative flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all",
+                    data.baggageMode === opt.value
+                      ? "border-primary bg-primary/10 dark:bg-primary/15"
+                      : "border-input hover:bg-accent"
                   )}
                 >
+                  {data.baggageMode === opt.value && (
+                    <Check className="absolute top-3 right-3 h-4 w-4 text-primary" />
+                  )}
                   <span className="text-2xl">{opt.label.split(" ")[0]}</span>
                   <div>
                     <div className="font-medium">{opt.label.split(" ").slice(1).join(" ")}</div>
