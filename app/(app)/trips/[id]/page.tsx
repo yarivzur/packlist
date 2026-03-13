@@ -89,20 +89,21 @@ export default async function TripDetailPage({
         {trip.baggageMode !== "unknown" && (
           <Badge variant="outline" className="capitalize">{trip.baggageMode}</Badge>
         )}
-        {/* Visa status badge */}
+        {/* Visa status badge — neutral pill + colored dot avoids same-hue contrast issues */}
         {visa && (
           <span
-            className={[
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-              visa.status === "green" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-              visa.status === "yellow" && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-              visa.status === "red" && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-            ].filter(Boolean).join(" ")}
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium bg-background text-foreground"
             title={visa.notes}
           >
-            <span aria-hidden>
-              {visa.status === "green" ? "🟢" : visa.status === "yellow" ? "🟡" : "🔴"}
-            </span>
+            <span
+              aria-hidden
+              className={[
+                "h-2 w-2 rounded-full shrink-0",
+                visa.status === "green" && "bg-green-500",
+                visa.status === "yellow" && "bg-yellow-500",
+                visa.status === "red" && "bg-red-500",
+              ].filter(Boolean).join(" ")}
+            />
             {visa.label}
             {visa.maxStay && ` · up to ${visa.maxStay} days`}
           </span>
