@@ -6,17 +6,22 @@
  * Value: Map of destination country code → entry type
  *
  * Entry types:
- *   visa_free      – No visa needed, typically up to 90 days
- *   eta            – Electronic Travel Authorization needed (quick online)
+ *   visa_free      – No visa needed at all, no online application required
+ *   eta            – Electronic Travel Authorization needed before departure (quick online)
+ *                    Includes ESTA (US), eVisitor (AU), NZeTA (NZ), eTA (CA), etc.
  *   visa_on_arrival – Visa obtainable at the border / airport
  *   visa_required  – Must apply in advance at embassy
+ *
+ * IMPORTANT: "Visa-free" ≠ "no paperwork required".
+ *   Many countries require an eTA/ESTA even for visa-waiver travellers.
+ *   Always use `eta` for those corridors, not `visa_free`.
  */
 
 export type EntryType = "visa_free" | "eta" | "visa_on_arrival" | "visa_required";
 
 export interface VisaRequirement {
   type: EntryType;
-  notes?: string; // e.g. "up to 90 days / 180 days per year", "apply online at gov.uk"
+  notes?: string; // e.g. "ESTA required — apply at esta.cbp.dhs.gov"
   maxStay?: number; // days
 }
 
@@ -55,7 +60,7 @@ const visaDb: Record<string, DestMap> = {
     BR: { type: "visa_free", maxStay: 90 },
     AR: { type: "visa_free", maxStay: 90 },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa required, apply online", maxStay: 60 },
+    IN: { type: "eta", notes: "e-Visa required, apply at indianvisaonline.gov.in", maxStay: 60 },
     CN: { type: "visa_required", notes: "Apply at Chinese embassy/consulate" },
     RU: { type: "visa_required", notes: "Apply at Russian embassy" },
     UA: { type: "visa_free", maxStay: 90 },
@@ -65,7 +70,7 @@ const visaDb: Record<string, DestMap> = {
     EG: { type: "visa_on_arrival", notes: "Visa on arrival available at airports" },
     TZ: { type: "visa_on_arrival", notes: "Visa on arrival, ~$50" },
     ZA: { type: "visa_free", maxStay: 90 },
-    KE: { type: "eta", notes: "eTA required, apply online at etakenya.go.ke" },
+    KE: { type: "eta", notes: "eTA required, apply at etakenya.go.ke" },
     ID: { type: "visa_free", maxStay: 30 },
     VN: { type: "visa_free", notes: "Visa-free for 45 days", maxStay: 45 },
     MY: { type: "visa_free", maxStay: 90 },
@@ -78,7 +83,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── United Kingdom (GB) ──────────────────────────────────────────────────────
   GB: {
-    US: { type: "visa_free", maxStay: 90 },
+    // UK is in the US Visa Waiver Program — ESTA required before departure
+    US: { type: "eta", notes: "ESTA required — apply at esta.cbp.dhs.gov", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
     DE: { type: "visa_free", maxStay: 90 },
     ES: { type: "visa_free", maxStay: 90 },
@@ -98,7 +104,7 @@ const visaDb: Record<string, DestMap> = {
     MX: { type: "visa_free", maxStay: 180 },
     BR: { type: "visa_free", maxStay: 90 },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa available online", maxStay: 60 },
+    IN: { type: "eta", notes: "e-Visa available at indianvisaonline.gov.in", maxStay: 60 },
     CN: { type: "visa_free", notes: "Visa-free for 15 days (2024 arrangement)", maxStay: 15 },
     TR: { type: "eta", notes: "e-Visa available at evisa.gov.tr", maxStay: 90 },
     AE: { type: "visa_free", maxStay: 30 },
@@ -115,7 +121,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Israel (IL) ──────────────────────────────────────────────────────────────
   IL: {
-    US: { type: "visa_free", maxStay: 90 },
+    // Israel joined the US Visa Waiver Program in September 2023 — ESTA required
+    US: { type: "eta", notes: "ESTA required — apply at esta.cbp.dhs.gov", maxStay: 90 },
     GB: { type: "visa_free", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
     DE: { type: "visa_free", maxStay: 90 },
@@ -142,7 +149,7 @@ const visaDb: Record<string, DestMap> = {
     MX: { type: "visa_free", maxStay: 180 },
     BR: { type: "visa_free", maxStay: 90 },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa available online", maxStay: 60 },
+    IN: { type: "eta", notes: "e-Visa available at indianvisaonline.gov.in", maxStay: 60 },
     CN: { type: "visa_required", notes: "Apply at Chinese embassy" },
     TR: { type: "visa_on_arrival", notes: "Visa on arrival available" },
     AE: { type: "visa_free", maxStay: 30 },
@@ -171,7 +178,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Germany (DE) ─────────────────────────────────────────────────────────────
   DE: {
-    US: { type: "visa_free", maxStay: 90 },
+    // Germany is in the US Visa Waiver Program — ESTA required
+    US: { type: "eta", notes: "ESTA required — apply at esta.cbp.dhs.gov", maxStay: 90 },
     GB: { type: "visa_free", maxStay: 90 },
     JP: { type: "visa_free", maxStay: 90 },
     KR: { type: "visa_free", maxStay: 90 },
@@ -181,7 +189,7 @@ const visaDb: Record<string, DestMap> = {
     MX: { type: "visa_free", maxStay: 180 },
     BR: { type: "visa_free", maxStay: 90 },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa available online" },
+    IN: { type: "eta", notes: "e-Visa available at indianvisaonline.gov.in" },
     CN: { type: "visa_free", notes: "Visa-free 15 days (2024)", maxStay: 15 },
     TR: { type: "visa_free", maxStay: 90 },
     AE: { type: "visa_free", maxStay: 30 },
@@ -197,7 +205,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── France (FR) ──────────────────────────────────────────────────────────────
   FR: {
-    US: { type: "visa_free", maxStay: 90 },
+    // France is in the US Visa Waiver Program — ESTA required
+    US: { type: "eta", notes: "ESTA required — apply at esta.cbp.dhs.gov", maxStay: 90 },
     GB: { type: "visa_free", maxStay: 90 },
     AU: { type: "eta", notes: "eVisitor required", maxStay: 90 },
     NZ: { type: "eta", notes: "NZeTA required", maxStay: 90 },
@@ -206,7 +215,7 @@ const visaDb: Record<string, DestMap> = {
     KR: { type: "visa_free", maxStay: 90 },
     SG: { type: "visa_free", maxStay: 30 },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa available online" },
+    IN: { type: "eta", notes: "e-Visa available at indianvisaonline.gov.in" },
     CN: { type: "visa_free", notes: "Visa-free 15 days (2024)", maxStay: 15 },
     TR: { type: "visa_free", maxStay: 90 },
     AE: { type: "visa_free", maxStay: 30 },
@@ -222,6 +231,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Canada (CA) ──────────────────────────────────────────────────────────────
   CA: {
+    // Canadian citizens are NOT in the VWP — they can enter the US visa-free without ESTA
+    // (special bilateral arrangement; applies to air, land, and sea crossings)
     US: { type: "visa_free", maxStay: 180 },
     GB: { type: "visa_free", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
@@ -234,7 +245,7 @@ const visaDb: Record<string, DestMap> = {
     KR: { type: "visa_free", maxStay: 90 },
     SG: { type: "visa_free", maxStay: 30 },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa available online" },
+    IN: { type: "eta", notes: "e-Visa available at indianvisaonline.gov.in" },
     CN: { type: "visa_required" },
     TR: { type: "eta", notes: "e-Visa available at evisa.gov.tr" },
     AE: { type: "visa_free", maxStay: 30 },
@@ -251,7 +262,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Australia (AU) ───────────────────────────────────────────────────────────
   AU: {
-    US: { type: "visa_free", maxStay: 90 },
+    // Australia is in the US Visa Waiver Program — ESTA required
+    US: { type: "eta", notes: "ESTA required — apply at esta.cbp.dhs.gov", maxStay: 90 },
     GB: { type: "visa_free", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
     DE: { type: "visa_free", maxStay: 90 },
@@ -261,7 +273,7 @@ const visaDb: Record<string, DestMap> = {
     NZ: { type: "visa_free", maxStay: 90 },
     CA: { type: "eta", notes: "eTA required" },
     TH: { type: "visa_free", maxStay: 30 },
-    IN: { type: "eta", notes: "e-Visa available online" },
+    IN: { type: "eta", notes: "e-Visa available at indianvisaonline.gov.in" },
     CN: { type: "visa_required" },
     TR: { type: "eta", notes: "e-Visa required" },
     AE: { type: "visa_free", maxStay: 30 },
@@ -296,7 +308,7 @@ const visaDb: Record<string, DestMap> = {
     FR: { type: "visa_required" },
     DE: { type: "visa_required" },
     IT: { type: "visa_required" },
-    TR: { type: "eta", notes: "e-Visa available online" },
+    TR: { type: "eta", notes: "e-Visa available at evisa.gov.tr" },
     EG: { type: "visa_on_arrival" },
     JO: { type: "visa_on_arrival" },
     QA: { type: "visa_on_arrival" },
@@ -327,7 +339,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Brazil (BR) ──────────────────────────────────────────────────────────────
   BR: {
-    US: { type: "visa_free", notes: "Visa-free since 2024", maxStay: 90 },
+    // Note: Brazil is NOT in the US Visa Waiver Program. A B1/B2 visa is required.
+    US: { type: "visa_required", notes: "B1/B2 tourist visa required — apply at travel.state.gov" },
     GB: { type: "visa_free", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
     DE: { type: "visa_free", maxStay: 90 },
@@ -349,7 +362,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Japan (JP) ───────────────────────────────────────────────────────────────
   JP: {
-    US: { type: "visa_free", maxStay: 90 },
+    // Japan is in the US Visa Waiver Program — ESTA required
+    US: { type: "eta", notes: "ESTA required — apply at esta.cbp.dhs.gov", maxStay: 90 },
     GB: { type: "visa_free", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
     DE: { type: "visa_free", maxStay: 90 },
@@ -394,7 +408,8 @@ const visaDb: Record<string, DestMap> = {
 
   // ── Turkey (TR) ──────────────────────────────────────────────────────────────
   TR: {
-    US: { type: "visa_free", maxStay: 90 },
+    // Turkey is NOT in the US Visa Waiver Program — B1/B2 visa required
+    US: { type: "visa_required", notes: "B1/B2 visa required — apply at travel.state.gov" },
     GB: { type: "eta", notes: "e-Visa required", maxStay: 30 },
     DE: { type: "visa_free", maxStay: 90 },
     FR: { type: "visa_free", maxStay: 90 },
@@ -428,6 +443,62 @@ export const EU_NATIONALITIES: Set<string> = new Set([
   "SI", "ES", "SE",
 ]);
 
+/**
+ * Countries in the US Visa Waiver Program (VWP).
+ *
+ * Citizens of these countries can enter the US for up to 90 days without a
+ * traditional visa, but MUST obtain ESTA (Electronic System for Travel
+ * Authorization) BEFORE departure. ESTA ≠ visa-free.
+ *
+ * Note: Canada and Bermuda are NOT in the VWP but also don't require a visa or
+ * ESTA — they have separate bilateral arrangements.
+ *
+ * Source: https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visa-waiver-program.html
+ */
+export const VWP_COUNTRIES: Set<string> = new Set([
+  "AD", // Andorra
+  "AU", // Australia
+  "AT", // Austria
+  "BE", // Belgium
+  "BN", // Brunei
+  "CL", // Chile
+  "HR", // Croatia
+  "CZ", // Czech Republic
+  "DK", // Denmark
+  "EE", // Estonia
+  "FI", // Finland
+  "FR", // France
+  "DE", // Germany
+  "GR", // Greece
+  "HU", // Hungary
+  "IS", // Iceland
+  "IE", // Ireland
+  "IT", // Italy
+  "JP", // Japan
+  "LV", // Latvia
+  "LI", // Liechtenstein
+  "LT", // Lithuania
+  "LU", // Luxembourg
+  "MT", // Malta
+  "MC", // Monaco
+  "NL", // Netherlands
+  "NZ", // New Zealand
+  "NO", // Norway
+  "PL", // Poland
+  "PT", // Portugal
+  "SM", // San Marino
+  "SG", // Singapore
+  "SK", // Slovakia
+  "SI", // Slovenia
+  "KR", // South Korea
+  "ES", // Spain
+  "SE", // Sweden
+  "CH", // Switzerland
+  "TW", // Taiwan
+  "GB", // United Kingdom
+  "IL", // Israel (added September 2023)
+]);
+
 export function getVisaRequirement(
   nationality: string,
   destinationCountry: string
@@ -443,6 +514,16 @@ export function getVisaRequirement(
   }
   if (SCHENGEN.has(nationality) && EU_NATIONALITIES.has(destinationCountry)) {
     return { type: "visa_free", notes: "Schengen area travel" };
+  }
+
+  // Visa Waiver Program: these nationalities can enter the US without a visa,
+  // but ESTA is required BEFORE departure. This is NOT truly "visa-free".
+  if (destinationCountry === "US" && VWP_COUNTRIES.has(nationality)) {
+    return {
+      type: "eta",
+      notes: "ESTA required — apply at esta.cbp.dhs.gov before departure",
+      maxStay: 90,
+    };
   }
 
   // Look up in database
