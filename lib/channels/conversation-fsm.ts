@@ -334,14 +334,14 @@ async function processState(
           baggageMode: newData.baggage!,
         });
 
-        return {
-          nextState: "IDLE",
-          nextData: {},
-          reply: {
-            text: `✅ Trip created!\n\n📍 ${trip.destinationText}\n📅 ${trip.startDate} → ${trip.endDate}\n\nYour checklist is ready!`,
-            buttons: [[{ label: "📋 View checklist", data: `/checklist:${trip.id}` }]],
-          },
-        };
+        const checklistResult = await buildChecklistReply(
+          trip.id,
+          trip.destinationText,
+          "VIEWING_CHECKLIST",
+          { viewingTripId: trip.id },
+          `✅ *Trip created!*\n📍 ${trip.destinationText} · ${trip.startDate} → ${trip.endDate}`
+        );
+        return checklistResult;
       } catch {
         return {
           nextState: "IDLE",
@@ -381,7 +381,8 @@ async function buildChecklistReply(
   tripId: string,
   destinationText: string,
   nextState: ConversationState,
-  nextData: ConversationData
+  nextData: ConversationData,
+  header?: string
 ): Promise<{
   nextState: ConversationState;
   nextData: ConversationData;
@@ -402,7 +403,8 @@ async function buildChecklistReply(
   );
   if (items.length > 20) lines.push(`_…and ${items.length - 20} more items_`);
 
-  const text = `📋 *${destinationText}*\n${doneCount}/${total} packed\n\n${lines.join("\n")}`;
+  const checklistBody = `📋 *${destinationText}*\n${doneCount}/${total} packed\n\n${lines.join("\n")}`;
+  const text = header ? `${header}\n\n${checklistBody}` : checklistBody;
 
   // Group up to 5 unchecked items as quick-check buttons (2 per row)
   const checkButtons = undone.slice(0, 5).map((i) => ({

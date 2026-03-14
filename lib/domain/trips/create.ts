@@ -75,6 +75,7 @@ export async function createTrip(input: CreateTripInput) {
     baggage: input.baggageMode,
     weather,
     destination: input.destinationText,
+    destinationCountry,
     visaResult,
   });
 

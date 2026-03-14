@@ -1,5 +1,6 @@
 import type { WeatherData } from "@/lib/domain/weather/open-meteo";
 import { visaChecklistItems, type VisaCheckResult } from "@/lib/domain/visa/visa-check";
+import { getCurrencyForCountry } from "@/lib/domain/currency/currency-lookup";
 import {
   BASE_ITEMS,
   INTERNATIONAL_ITEMS,
@@ -20,6 +21,8 @@ export interface RulesInput {
   baggage: "carry-on" | "checked" | "unknown";
   weather: WeatherData | null;
   destination?: string;
+  /** ISO 3166-1 alpha-2 country code for the destination (used for currency lookup, etc.) */
+  destinationCountry?: string | null;
   /** Pre-computed visa check result to inject items (optional) */
   visaResult?: VisaCheckResult | null;
 }
@@ -72,8 +75,18 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
     .sort((a, b) => a.priority - b.priority)
     .map((item) => {
       const { quantity, rationale } = calculateQuantity(item.id, input);
+
+      // Personalise the currency item when we know the destination country
+      let text = item.text;
+      if (item.id === "currency" && input.destinationCountry) {
+        const currency = getCurrencyForCountry(input.destinationCountry);
+        if (currency) {
+          text = `Local currency — ${currency.name} (${currency.code}) or Revolut/Wise`;
+        }
+      }
+
       return {
-        text: item.text,
+        text,
         category: item.category,
         priority: item.priority,
         sourceRule: item.id,
