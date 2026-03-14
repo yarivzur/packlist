@@ -16,6 +16,7 @@ A Next.js 15 travel packing list app. Users create trips, get auto-generated sma
 - No migration files — push workflow only
 - API routes live under `app/api/`; use Zod for request validation
 - Client components in `components/`; server components/pages in `app/`
+- **Vercel env vars**: always add with `printf 'value' | npx vercel env add KEY production` — never `echo`, which adds a trailing `\n` that breaks secret matching
 
 ## Domain structure
 ```
@@ -28,10 +29,17 @@ lib/domain/
   visa/
     visa-data.ts       — static visa DB + VWP_COUNTRIES set + getVisaRequirement()
     visa-check.ts      — checkVisa() + visaChecklistItems()
+  currency/
+    currency-lookup.ts — getCurrencyForCountry(code) → { name, code } | null
   weather/
     open-meteo.ts      — fetchWeather()
   reminders/
     schedule.ts / dispatch.ts
+lib/channels/
+  conversation-fsm.ts  — shared Telegram/WhatsApp FSM (persisted in bot_sessions)
+  telegram/client.ts   — Telegram sendMessage wrapper
+  whatsapp/client.ts   — WhatsApp sendMessage wrapper
+  interface.ts         — Channel, ConversationState, ConversationData types
 ```
 
 ---
@@ -80,39 +88,42 @@ lib/domain/
 
 **Visa data accuracy fixes**
 - Reclassified all VWP corridors: IL/GB/DE/FR/AU/JP → US now `eta` (ESTA required), not `visa_free`
-- Fixed BR → US: `visa_required` (was incorrectly `visa_free`)
-- Fixed TR → US: `visa_required` (was incorrectly `visa_free`)
+- Fixed BR → US: `visa_required`; Fixed TR → US: `visa_required`
 - VWP fallback rule in `getVisaRequirement()` covers all 40 VWP nationalities automatically
 
----
+**Checklist quality fixes**
+- Removed duplicate "Check visa requirements" generic item from `INTERNATIONAL_ITEMS`
+- Removed duplicate "Laptop in accessible part of bag" and "100ml liquids" items (emptied `CARRY_ON_ITEMS`)
+- Removed always-appended "Check entry requirements & passport validity" from `visaChecklistItems()`
 
-### In Progress / Known Issues 🔧
+**A3 — UX Review (applied fixes)**
+- Full UX review run against all core flows (report in gitignored `docs/`)
+- Delete button on checklist items: always visible on mobile, hover-only on desktop
+- Review mode banner: updated copy to "Your list is ready!" + "Start packing! 🎒"
 
-**Checklist quality issues (reported, not yet fixed)**
-1. **Duplicate visa items** — three visa-related items appear for international trips:
-   - "Get eTA / e-Visa for US — ESTA required..." (`visaChecklistItems`, priority 2)
-   - "Check entry requirements & passport validity" (always appended in `visaChecklistItems`, priority 5)
-   - A third "Check visa requirements" item — source unknown, investigate
-   - Fix: remove the always-appended generic item; the specific action item is sufficient
+**Currency lookup**
+- `lib/domain/currency/currency-lookup.ts`: 80+ countries mapped to currency name + code
+- Rules engine personalises "Local currency" item: e.g. "Local currency — US Dollars (USD) or Revolut/Wise"
+- Falls back to generic text when destination country is unknown
 
-2. **Duplicate tech items** — "Laptop" and "Laptop in accessible part of bag" both appear
-   - "Laptop" comes from `BUSINESS_ITEMS` in `templates.ts`
-   - "Laptop in accessible part of bag" — source unknown (carry-on logic?)
-   - Fix: merge hint into single item or remove the redundant reminder
-
-3. **Confusing toiletries item** — "100ml liquids in clear zip bag"
-   - Source unknown — not in `templates.ts`; likely injected by rules engine or carry-on logic
-   - May be reasonable for carry-on trips but poorly worded as a packing item
-   - Fix: remove, or scope strictly to carry-on with a better label like "Pack liquids in 100ml containers (carry-on rule)"
+**M4 — Telegram Bot** *(bot: @RashmatzBot)*
+- `telegramLinkTokens` table in schema (token, userId, expiresAt, usedAt) — pushed to Neon
+- Account linking: `POST /api/users/telegram/link-token` (15-min one-time token + deep link)
+- Account status: `GET /api/users/telegram/status`
+- Settings page: "Connect Telegram" button → opens deep link → shows @RashmatzBot + fallback link
+- Full conversation FSM (`lib/channels/conversation-fsm.ts`):
+  - `/start link_TOKEN` → links account, confirms with ✅
+  - `/start` → welcome message
+  - `/newtrip` → 4-step guided flow (type → destination → dates → baggage)
+  - After trip creation → shows checklist immediately (no intermediate IDLE state)
+  - `/checklist:TRIPID` / `refresh:TRIPID` → formatted checklist with quick-check buttons
+  - `check:ITEMID` → toggles item done, refreshes view
+- Webhook registered at `https://packlist-beta.vercel.app/api/webhooks/telegram`
+- **Known infra gotcha**: `packlist-yariv-zurs-projects.vercel.app` has Vercel SSO protection; use `packlist-beta.vercel.app` as the public production URL
 
 ---
 
 ### Backlog 📋
-
-**A3 — UX Researcher Persona Validation Gate** *(post-M4)*
-- Walk through each core user flow using a UX Researcher persona
-- Produce `docs/ux-validation-report.md` (UX score per flow, top 3 friction points, fixes)
-- Apply copy/interaction fixes from the report
 
 **A5 — Power Adapter Intelligence**
 - Static plug-type lookup by destination country (`lib/domain/power/plug-lookup.ts`)
@@ -120,12 +131,6 @@ lib/domain/
 - Rules engine: if home plug ≠ destination plug → inject "Power adapter (Type G)" into `tech` category
 - Voltage difference check → add "Check device voltage compatibility" item
 - New files: `lib/domain/power/plug-lookup.ts` + `lib/domain/power/plug-data.json`
-
-**M4 — Telegram Bot**
-- Telegram Bot setup + webhook at `/api/webhooks/telegram`
-- `bot_sessions` table + conversation state machine (already in schema)
-- Full `/newtrip` guided flow via bot
-- Toggle checklist items and view reminders via bot commands
 
 **M5 — WhatsApp Channel**
 - Meta WhatsApp Cloud API setup + webhook at `/api/webhooks/whatsapp`
@@ -150,17 +155,24 @@ lib/domain/
 ## Key files
 | File | Purpose |
 |---|---|
-| `lib/db/schema.ts` | Full DB schema |
+| `lib/db/schema.ts` | Full DB schema (incl. telegramLinkTokens) |
 | `lib/domain/checklists/templates.ts` | All static checklist item banks |
-| `lib/domain/checklists/rules-engine.ts` | Checklist generation logic |
+| `lib/domain/checklists/rules-engine.ts` | Checklist generation logic + currency personalisation |
+| `lib/domain/currency/currency-lookup.ts` | Country → currency mapping (80+ countries) |
 | `lib/domain/trips/create.ts` | Trip creation orchestrator |
 | `lib/domain/visa/visa-data.ts` | Visa DB + VWP logic |
 | `lib/domain/visa/visa-check.ts` | checkVisa() + checklist injection |
-| `components/settings/settings-form.tsx` | Theme + nationality + homeCountry UI |
+| `lib/channels/conversation-fsm.ts` | Telegram/WhatsApp conversation state machine |
+| `lib/channels/telegram/client.ts` | Telegram sendMessage API wrapper |
+| `components/settings/settings-form.tsx` | Theme + nationality + homeCountry + Telegram connect UI |
 | `components/trips/trip-form.tsx` | Multi-step trip creation wizard |
 | `app/(app)/trips/[id]/page.tsx` | Trip detail + visa badge |
 | `app/api/trips/route.ts` | POST /api/trips |
 | `app/api/users/me/route.ts` | PATCH /api/users/me |
+| `app/api/users/telegram/link-token/route.ts` | POST — generate Telegram link token |
+| `app/api/users/telegram/status/route.ts` | GET — check if Telegram is connected |
+| `app/api/webhooks/telegram/route.ts` | Telegram webhook handler |
+| `scripts/register-telegram-webhook.ts` | One-time script to register bot webhook |
 
 ## Environment variables
 ```
@@ -170,6 +182,7 @@ AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_WEBHOOK_SECRET=
+NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=RashmatzBot
 WHATSAPP_ACCESS_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 WHATSAPP_VERIFY_TOKEN=
