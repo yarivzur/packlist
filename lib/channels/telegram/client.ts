@@ -17,10 +17,11 @@ export const telegramChannel: Channel = {
     if (message.buttons?.length) {
       payload.reply_markup = {
         inline_keyboard: message.buttons.map((row) =>
-          row.map((btn) => ({
-            text: btn.label,
-            callback_data: btn.data,
-          }))
+          row.map((btn) =>
+            btn.url
+              ? { text: btn.label, url: btn.url }
+              : { text: btn.label, callback_data: btn.data }
+          )
         ),
       };
     }

@@ -17,7 +17,8 @@ export interface OutgoingMessage {
 
 export interface Button {
   label: string;
-  data: string; // callback data or quick reply payload
+  data?: string; // callback data or quick reply payload (FSM actions)
+  url?: string;  // external URL (e.g. "Open in app" deep link)
 }
 
 export interface Channel {
