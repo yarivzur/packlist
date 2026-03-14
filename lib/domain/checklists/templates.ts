@@ -36,7 +36,6 @@ export const BASE_ITEMS: TemplateItem[] = [
 
 // International travel extras
 export const INTERNATIONAL_ITEMS: TemplateItem[] = [
-  { id: "visa-check", text: "Check visa requirements", category: "crucial", priority: 5 },
   { id: "travel-insurance", text: "Travel insurance docs", category: "crucial", priority: 16 },
   { id: "esim", text: "SIM card / eSIM for destination", category: "tech", priority: 35 },
   { id: "power-adapter", text: "Power adapter (check plug type)", category: "tech", priority: 30 },
@@ -74,10 +73,7 @@ export const HOT_ITEMS: TemplateItem[] = [
 ];
 
 // Carry-on specific reminders
-export const CARRY_ON_ITEMS: TemplateItem[] = [
-  { id: "liquids-bag", text: "100ml liquids in clear zip bag", category: "toiletries", priority: 15 },
-  { id: "laptop-accessible", text: "Laptop in accessible part of bag", category: "tech", priority: 16 },
-];
+export const CARRY_ON_ITEMS: TemplateItem[] = [];
 
 // Health items
 export const HEALTH_ITEMS: TemplateItem[] = [
