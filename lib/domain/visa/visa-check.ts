@@ -87,13 +87,5 @@ export function visaChecklistItems(
     });
   }
 
-  // Always add an entry-requirements check item for international trips
-  items.push({
-    text: "Check entry requirements & passport validity",
-    priority: 5,
-    sourceRule: "visa_check",
-    rationale: "Always verify current entry rules before travel",
-  });
-
   return items;
 }
