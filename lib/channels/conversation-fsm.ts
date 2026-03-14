@@ -5,7 +5,7 @@
  */
 
 import { db } from "@/lib/db";
-import { botSessions, checklistItems, telegramLinkTokens, trips } from "@/lib/db/schema";
+import { botSessions, checklistItems, telegramLinkTokens, whatsappLinkTokens, trips, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createTrip } from "@/lib/domain/trips/create";
 import type {
@@ -13,7 +13,10 @@ import type {
   ConversationState,
   ConversationData,
   IncomingMessage,
+  OutgoingMessage,
 } from "./interface";
+import type { WeatherData } from "@/lib/domain/weather/open-meteo";
+import type { VisaCheckResult } from "@/lib/domain/visa/visa-check";
 
 const TRIP_TYPE_BUTTONS = [
   [
@@ -65,11 +68,12 @@ export async function handleMessage(
   const state = session.state as ConversationState;
   const data = (session.stateDataJson ?? {}) as ConversationData;
 
-  const { nextState, nextData, reply, linkUserId } = await processState(
+  const { nextState, nextData, reply, linkUserId, preSend } = await processState(
     state,
     data,
     input,
-    session.userId
+    session.userId,
+    channel.name
   );
 
   // Persist state update (and optionally link the userId)
@@ -83,6 +87,13 @@ export async function handleMessage(
     })
     .where(eq(botSessions.id, session.id));
 
+  // Send context messages (weather, visa) before the main reply
+  if (preSend) {
+    for (const msg of preSend) {
+      await channel.sendMessage(channelUserId, msg);
+    }
+  }
+
   await channel.sendMessage(channelUserId, reply);
 }
 
@@ -90,21 +101,53 @@ async function processState(
   state: ConversationState,
   data: ConversationData,
   input: string,
-  userId: string | null | undefined
+  userId: string | null | undefined,
+  channelName: "telegram" | "whatsapp"
 ): Promise<{
   nextState: ConversationState;
   nextData: ConversationData;
   reply: Parameters<Channel["sendMessage"]>[1];
   linkUserId?: string;
+  preSend?: OutgoingMessage[];
 }> {
-  // ── Account linking: /start link_TOKEN ──────────────────────────────────────
-  if (input.startsWith("/start link_")) {
-    const token = input.slice("/start link_".length).trim();
-    const [linkToken] = await db
-      .select()
-      .from(telegramLinkTokens)
-      .where(eq(telegramLinkTokens.token, token))
-      .limit(1);
+  // ── Account linking: Telegram → /start link_TOKEN | WhatsApp → link_TOKEN ───
+  const telegramLinkMatch = channelName === "telegram" && input.startsWith("/start link_");
+  const whatsappLinkMatch = channelName === "whatsapp" && input.startsWith("link_");
+
+  if (telegramLinkMatch || whatsappLinkMatch) {
+    const token = telegramLinkMatch
+      ? input.slice("/start link_".length).trim()
+      : input.slice("link_".length).trim();
+
+    let linkToken: typeof telegramLinkTokens.$inferSelect | typeof whatsappLinkTokens.$inferSelect | undefined;
+
+    if (channelName === "telegram") {
+      const [row] = await db
+        .select()
+        .from(telegramLinkTokens)
+        .where(eq(telegramLinkTokens.token, token))
+        .limit(1);
+      linkToken = row;
+      if (linkToken && !linkToken.usedAt && linkToken.expiresAt >= new Date()) {
+        await db
+          .update(telegramLinkTokens)
+          .set({ usedAt: new Date() })
+          .where(eq(telegramLinkTokens.id, linkToken.id));
+      }
+    } else {
+      const [row] = await db
+        .select()
+        .from(whatsappLinkTokens)
+        .where(eq(whatsappLinkTokens.token, token))
+        .limit(1);
+      linkToken = row;
+      if (linkToken && !linkToken.usedAt && linkToken.expiresAt >= new Date()) {
+        await db
+          .update(whatsappLinkTokens)
+          .set({ usedAt: new Date() })
+          .where(eq(whatsappLinkTokens.id, linkToken.id));
+      }
+    }
 
     if (!linkToken || linkToken.usedAt || linkToken.expiresAt < new Date()) {
       return {
@@ -115,12 +158,6 @@ async function processState(
         },
       };
     }
-
-    // Mark token as used
-    await db
-      .update(telegramLinkTokens)
-      .set({ usedAt: new Date() })
-      .where(eq(telegramLinkTokens.id, linkToken.id));
 
     return {
       nextState: "IDLE",
@@ -325,6 +362,7 @@ async function processState(
       }
 
       try {
+        const [userRow] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
         const trip = await createTrip({
           userId,
           type: newData.tripType!,
@@ -332,6 +370,8 @@ async function processState(
           startDate: newData.startDate!,
           endDate: newData.endDate!,
           baggageMode: newData.baggage!,
+          userNationality: userRow?.nationality ?? null,
+          userHomeCountry: userRow?.homeCountry ?? null,
         });
 
         const checklistResult = await buildChecklistReply(
@@ -339,7 +379,8 @@ async function processState(
           trip.destinationText,
           "VIEWING_CHECKLIST",
           { viewingTripId: trip.id },
-          `✅ *Trip created!*\n📍 ${trip.destinationText} · ${trip.startDate} → ${trip.endDate}`
+          `✅ *Trip created!*\n📍 ${trip.destinationText} · ${trip.startDate} → ${trip.endDate}`,
+          true // send weather + visa context
         );
         return checklistResult;
       } catch {
@@ -382,11 +423,13 @@ async function buildChecklistReply(
   destinationText: string,
   nextState: ConversationState,
   nextData: ConversationData,
-  header?: string
+  header?: string,
+  sendContext = false
 ): Promise<{
   nextState: ConversationState;
   nextData: ConversationData;
   reply: Parameters<Channel["sendMessage"]>[1];
+  preSend?: OutgoingMessage[];
 }> {
   const items = await db
     .select()
@@ -422,9 +465,38 @@ async function buildChecklistReply(
     { label: "🔄 Refresh", data: `refresh:${tripId}` },
   ]);
 
+  // Build weather + visa pre-messages (only on trip creation)
+  const preSend: OutgoingMessage[] = [];
+  if (sendContext) {
+    const [tripRow] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
+    if (tripRow) {
+      const weather = tripRow.weatherDataJson as WeatherData | null;
+      const visa = tripRow.visaDataJson as VisaCheckResult | null;
+
+      // Always send a weather message — fallback if forecast isn't available yet
+      if (weather) {
+        const rainPct = Math.round(weather.rainProbability * 100);
+        const rainEmoji = weather.rainProbability > 0.5 ? "🌧" : weather.rainProbability > 0.25 ? "🌦" : "☀️";
+        const tempEmoji = weather.bucket === "hot" ? "🌡️" : weather.bucket === "cold" ? "🥶" : "🌤";
+        preSend.push({ text: `${tempEmoji} *Weather forecast*\nAvg ${weather.avgTempC}°C (${weather.bucket}) · ${rainEmoji} ${rainPct}% rain chance` });
+      } else {
+        preSend.push({ text: `🌡️ *Weather forecast*\nToo early for a forecast — check again closer to your departure date.` });
+      }
+
+      // Send visa info only when available (requires nationality to be set in Settings)
+      if (visa) {
+        const visaEmoji = visa.status === "green" ? "✅" : visa.status === "yellow" ? "⚠️" : "🔴";
+        const stayText = visa.maxStay ? ` · up to ${visa.maxStay} days` : "";
+        const notesText = visa.notes ? `\n${visa.notes}` : "";
+        preSend.push({ text: `${visaEmoji} *Entry requirements*\n${visa.label}${stayText}${notesText}` });
+      }
+    }
+  }
+
   return {
     nextState,
     nextData: { ...nextData, viewingTripId: tripId },
     reply: { text, buttons },
+    ...(preSend.length ? { preSend } : {}),
   };
 }

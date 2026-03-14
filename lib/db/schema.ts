@@ -170,6 +170,16 @@ export const telegramLinkTokens = pgTable("telegram_link_tokens", {
   usedAt: timestamp("used_at", { mode: "date" }),
 });
 
+export const whatsappLinkTokens = pgTable("whatsapp_link_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+  usedAt: timestamp("used_at", { mode: "date" }),
+});
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;

@@ -94,9 +94,10 @@ const THEME_OPTIONS = [
 interface SettingsFormProps {
   user: User;
   telegramConnected: boolean;
+  whatsappConnected: boolean;
 }
 
-export function SettingsForm({ user, telegramConnected }: SettingsFormProps) {
+export function SettingsForm({ user, telegramConnected, whatsappConnected }: SettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [timezone, setTimezone] = useState(user.timezone ?? "UTC");
@@ -271,18 +272,70 @@ export function SettingsForm({ user, telegramConnected }: SettingsFormProps) {
         </p>
         <div className="space-y-3">
           <TelegramConnectRow connected={telegramConnected} />
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">💬</span>
-              <div>
-                <p className="text-sm font-medium">WhatsApp</p>
-                <p className="text-xs text-muted-foreground">Chat-based checklist + reminders</p>
-              </div>
-            </div>
-            <span className="text-xs text-muted-foreground">Coming soon</span>
-          </div>
+          <WhatsAppConnectRow connected={whatsappConnected} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── WhatsApp connect row ─────────────────────────────────────────────────────
+
+function WhatsAppConnectRow({ connected }: { connected: boolean }) {
+  const [linking, setLinking] = useState(false);
+  const [deepLink, setDeepLink] = useState<string | null>(null);
+
+  const handleConnect = async () => {
+    setLinking(true);
+    setDeepLink(null);
+    try {
+      const res = await fetch("/api/users/whatsapp/link-token", { method: "POST" });
+      const data = await res.json() as { deepLink?: string };
+      if (data.deepLink) {
+        setDeepLink(data.deepLink);
+        window.open(data.deepLink, "_blank");
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">💬</span>
+          <div>
+            <p className="text-sm font-medium">WhatsApp</p>
+            <p className="text-xs text-muted-foreground">Create trips and manage checklists via chat</p>
+          </div>
+        </div>
+        {connected ? (
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="text-xs font-medium text-green-600">Connected</span>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={handleConnect} disabled={linking}>
+            {linking && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Connect
+          </Button>
+        )}
+      </div>
+      {deepLink && (
+        <div className="text-xs text-muted-foreground pl-1 space-y-1">
+          <p>A WhatsApp chat will open with a pre-filled message. Just tap <strong>Send</strong> to link your account.</p>
+          <p>
+            Link didn&apos;t open?{" "}
+            <a href={deepLink} target="_blank" rel="noopener noreferrer" className="underline text-primary">
+              Click here
+            </a>
+            , then refresh this page.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

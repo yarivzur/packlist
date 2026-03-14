@@ -16,8 +16,12 @@ export const whatsappChannel: Channel = {
     // Build text + quick reply buttons (WhatsApp interactive message)
     let body: Record<string, unknown>;
 
-    // WhatsApp quick-reply buttons only support callback (data) buttons — skip URL-only buttons
     const callbackButtons = message.buttons?.flat().filter((btn) => btn.data) ?? [];
+    // URL buttons aren't supported in WA interactive messages — append as text links
+    const urlButtons = message.buttons?.flat().filter((btn) => btn.url) ?? [];
+    const bodyText = urlButtons.length
+      ? `${message.text}\n\n${urlButtons.map((btn) => `${btn.label}: ${btn.url}`).join("\n")}`
+      : message.text;
 
     if (callbackButtons.length) {
       const flatButtons = callbackButtons.slice(0, 3); // WA max 3 quick reply buttons
@@ -27,7 +31,7 @@ export const whatsappChannel: Channel = {
         type: "interactive",
         interactive: {
           type: "button",
-          body: { text: message.text },
+          body: { text: bodyText },
           action: {
             buttons: flatButtons.map((btn) => ({
               type: "reply",
@@ -44,7 +48,7 @@ export const whatsappChannel: Channel = {
         messaging_product: "whatsapp",
         to: phone,
         type: "text",
-        text: { body: message.text },
+        text: { body: bodyText },
       };
     }
 
