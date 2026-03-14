@@ -36,75 +36,118 @@ lib/domain/
 
 ---
 
-## Roadmap & Status
+## Milestones & Status
 
 ### Completed ✅
 
-**A1 — Core trip + checklist MVP**
-- Trip creation wizard (4–5 steps), weather-aware checklist generation
-- Drizzle schema: users, trips, checklist_items, reminders
+**M1 — Foundation**
+- Next.js 15 + Tailwind + shadcn/ui scaffolding
+- Neon Postgres + Drizzle ORM
+- Auth.js v5 with Google OAuth
+- App shell: navbar, protected layout
 
-**A2 — Theme persistence**
-- Dark/light/system toggle in Settings auto-persists to DB on click
-- Cross-device sync via `useEffect` on settings mount
+**M2 — Core Web App**
+- Trip creation wizard (4–5 steps: type → destination → [passport] → dates → baggage)
+- Open-Meteo weather fetch on trip creation
+- Checklist rules engine + template seeds
+- Checklist page (grouped by category, tap-to-toggle)
+
+**M3 — Reminders**
+- Reminder schedule logic (calculate from trip dates + timezone)
+- Vercel Cron endpoint + dispatch
+- Settings page (timezone)
+
+**A1 — Packing Multiples Engine**
+- `quantity` column on `checklist_items`
+- Auto-calculated quantities per item type (underwear = days+1, t-shirts = days×0.8, etc.)
+- Hot weather and carry-on modifiers
+- Rationale text stored in DB and shown in UI
+
+**A2 — Light / Dark / System Theme**
+- `next-themes` installed, `ThemeProvider` in layout
 - `users.theme` column (default: 'system')
+- Theme toggle in Settings auto-persists to DB on click (fire-and-forget)
+- Cross-device sync via `useEffect` on settings mount
 
-**A3 — Timezone-aware reminders** *(status unknown — check git log)*
-
-**A4 — Visa requirements**
+**A4 — Visa Requirements Module**
 - Static visa DB (`lib/domain/visa/visa-data.ts`): 13 nationalities × 50+ destinations
-- VWP_COUNTRIES set — all 40 VWP members correctly classified as `eta` (ESTA required)
+- `VWP_COUNTRIES` set — all 40 VWP members correctly classified as `eta` (ESTA required)
 - `checkVisa()` + `visaChecklistItems()` inject priority-1 items into checklist
 - Visa status badge on trip detail page (neutral pill + coloured dot: green/yellow/red)
-- `users.nationality`, `users.homeCountry` columns
-- `trips.visa_data_json` column
+- `users.nationality`, `users.homeCountry` columns; `trips.visa_data_json` column
 - Nationality/homeCountry dropdowns in Settings
-- Conditional "Passport" step (step 3 of 5) in trip creation wizard — shown only when nationality not set; skippable
+- Conditional "Passport" step in trip creation wizard (shown only when nationality not set; skippable)
 
-**Visa data accuracy fixes (latest)**
-- Reclassified VWP corridors: IL/GB/DE/FR/AU/JP → US now `eta` (ESTA required)
-- Fixed BR → US: was incorrectly `visa_free`, now `visa_required`
-- Fixed TR → US: was incorrectly `visa_free`, now `visa_required`
-- Added VWP fallback rule in `getVisaRequirement()` for all VWP nationalities
+**Visa data accuracy fixes**
+- Reclassified all VWP corridors: IL/GB/DE/FR/AU/JP → US now `eta` (ESTA required), not `visa_free`
+- Fixed BR → US: `visa_required` (was incorrectly `visa_free`)
+- Fixed TR → US: `visa_required` (was incorrectly `visa_free`)
+- VWP fallback rule in `getVisaRequirement()` covers all 40 VWP nationalities automatically
 
 ---
 
-### In progress / Known issues 🔧
+### In Progress / Known Issues 🔧
 
 **Checklist quality issues (reported, not yet fixed)**
-1. **Duplicate visa items** — three visa-related items appear for international trips with a known nationality:
-   - "Get eTA / e-Visa for US — ESTA required..." (from `visaChecklistItems`, priority 2)
-   - "Check entry requirements & passport validity" (from `visaChecklistItems`, always appended, priority 5)
-   - A third "Check visa requirements" item — source unknown, needs investigation
-   - Fix: remove the always-appended generic item; the specific item is sufficient
+1. **Duplicate visa items** — three visa-related items appear for international trips:
+   - "Get eTA / e-Visa for US — ESTA required..." (`visaChecklistItems`, priority 2)
+   - "Check entry requirements & passport validity" (always appended in `visaChecklistItems`, priority 5)
+   - A third "Check visa requirements" item — source unknown, investigate
+   - Fix: remove the always-appended generic item; the specific action item is sufficient
 
 2. **Duplicate tech items** — "Laptop" and "Laptop in accessible part of bag" both appear
    - "Laptop" comes from `BUSINESS_ITEMS` in `templates.ts`
-   - "Laptop in accessible part of bag" — source unknown (rules engine or carry-on logic?)
-   - Fix: deduplicate; keep only one item (either merge the hint into the single item or remove the reminder)
+   - "Laptop in accessible part of bag" — source unknown (carry-on logic?)
+   - Fix: merge hint into single item or remove the redundant reminder
 
 3. **Confusing toiletries item** — "100ml liquids in clear zip bag"
-   - Source unknown — not visible in templates.ts; likely injected by rules engine or carry-on logic
-   - May be reasonable for carry-on trips but confusing as a packing *item*
-   - Fix: either remove, or scope strictly to carry-on trips with a better label
+   - Source unknown — not in `templates.ts`; likely injected by rules engine or carry-on logic
+   - May be reasonable for carry-on trips but poorly worded as a packing item
+   - Fix: remove, or scope strictly to carry-on with a better label like "Pack liquids in 100ml containers (carry-on rule)"
 
 ---
 
 ### Backlog 📋
 
-**B1 — Reminders / notifications**
-- No work started yet
-- Design discussion needed: push notifications vs email, timing logic, opt-in UX
+**A3 — UX Researcher Persona Validation Gate** *(post-M4)*
+- Walk through each core user flow using a UX Researcher persona
+- Produce `docs/ux-validation-report.md` (UX score per flow, top 3 friction points, fixes)
+- Apply copy/interaction fixes from the report
 
-**B2 — Trip edit / checklist customisation**
-- Users can check off items but cannot add/remove/reorder
+**A5 — Power Adapter Intelligence**
+- Static plug-type lookup by destination country (`lib/domain/power/plug-lookup.ts`)
+- `users.homeCountry` (already added) determines native plug type
+- Rules engine: if home plug ≠ destination plug → inject "Power adapter (Type G)" into `tech` category
+- Voltage difference check → add "Check device voltage compatibility" item
+- New files: `lib/domain/power/plug-lookup.ts` + `lib/domain/power/plug-data.json`
 
-**B3 — Sharing / collaboration**
-- No design yet
+**M4 — Telegram Bot**
+- Telegram Bot setup + webhook at `/api/webhooks/telegram`
+- `bot_sessions` table + conversation state machine (already in schema)
+- Full `/newtrip` guided flow via bot
+- Toggle checklist items and view reminders via bot commands
+
+**M5 — WhatsApp Channel**
+- Meta WhatsApp Cloud API setup + webhook at `/api/webhooks/whatsapp`
+- Reuse same conversation state machine (channel-agnostic)
+- Reminder dispatch via WhatsApp
+
+**M6 — PWA + Polish**
+- `manifest.json`, service worker, install prompt
+- Error states + loading skeletons
+- Edit trip + regenerate checklist
+- README complete with setup instructions
+
+**M7 — TripIt Integration** *(post-MVP)*
+- TripIt OAuth flow from Settings
+- Import upcoming trips → auto-generate PackList trips + checklists
+- Deduplication against manually-entered trips
+- New files: `lib/domain/tripit/client.ts`, `lib/domain/tripit/import.ts`
+- New env vars: `TRIPIT_CLIENT_ID`, `TRIPIT_CLIENT_SECRET`
 
 ---
 
-## Key files to know
+## Key files
 | File | Purpose |
 |---|---|
 | `lib/db/schema.ts` | Full DB schema |
@@ -118,3 +161,20 @@ lib/domain/
 | `app/(app)/trips/[id]/page.tsx` | Trip detail + visa badge |
 | `app/api/trips/route.ts` | POST /api/trips |
 | `app/api/users/me/route.ts` | PATCH /api/users/me |
+
+## Environment variables
+```
+DATABASE_URL=
+AUTH_SECRET=
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET=
+WHATSAPP_ACCESS_TOKEN=
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_VERIFY_TOKEN=
+CRON_SECRET=
+# Post-MVP:
+TRIPIT_CLIENT_ID=
+TRIPIT_CLIENT_SECRET=
+```
