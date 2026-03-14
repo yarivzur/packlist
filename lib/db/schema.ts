@@ -160,6 +160,16 @@ export const botSessions = pgTable("bot_sessions", {
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+export const telegramLinkTokens = pgTable("telegram_link_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+  usedAt: timestamp("used_at", { mode: "date" }),
+});
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;

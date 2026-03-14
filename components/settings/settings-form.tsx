@@ -93,9 +93,10 @@ const THEME_OPTIONS = [
 
 interface SettingsFormProps {
   user: User;
+  telegramConnected: boolean;
 }
 
-export function SettingsForm({ user }: SettingsFormProps) {
+export function SettingsForm({ user, telegramConnected }: SettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [timezone, setTimezone] = useState(user.timezone ?? "UTC");
@@ -269,16 +270,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
           Connect a messaging channel to receive reminders and manage checklists via chat.
         </p>
         <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">📱</span>
-              <div>
-                <p className="text-sm font-medium">Telegram</p>
-                <p className="text-xs text-muted-foreground">Chat-based checklist management</p>
-              </div>
-            </div>
-            <span className="text-xs text-muted-foreground">Coming soon</span>
-          </div>
+          <TelegramConnectRow connected={telegramConnected} />
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="flex items-center gap-3">
               <span className="text-xl">💬</span>
@@ -291,6 +283,60 @@ export function SettingsForm({ user }: SettingsFormProps) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Telegram connect row ─────────────────────────────────────────────────────
+
+function TelegramConnectRow({ connected }: { connected: boolean }) {
+  const [linking, setLinking] = useState(false);
+  const [instruction, setInstruction] = useState<string | null>(null);
+
+  const handleConnect = async () => {
+    setLinking(true);
+    setInstruction(null);
+    try {
+      const res = await fetch("/api/users/telegram/link-token", { method: "POST" });
+      const { deepLink } = await res.json();
+      if (deepLink) {
+        window.open(deepLink, "_blank");
+        setInstruction("Tap 'Start' in Telegram to link your account. Then come back here and refresh.");
+      } else {
+        setInstruction("Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME in your environment to enable deep linking.");
+      }
+    } catch {
+      setInstruction("Something went wrong. Please try again.");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">📱</span>
+          <div>
+            <p className="text-sm font-medium">Telegram</p>
+            <p className="text-xs text-muted-foreground">Create trips and manage checklists via chat</p>
+          </div>
+        </div>
+        {connected ? (
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="text-xs font-medium text-green-600">Connected</span>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={handleConnect} disabled={linking}>
+            {linking && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Connect
+          </Button>
+        )}
+      </div>
+      {instruction && (
+        <p className="text-xs text-muted-foreground pl-1">{instruction}</p>
+      )}
     </div>
   );
 }

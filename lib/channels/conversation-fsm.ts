@@ -5,7 +5,7 @@
  */
 
 import { db } from "@/lib/db";
-import { botSessions } from "@/lib/db/schema";
+import { botSessions, checklistItems, telegramLinkTokens, trips } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createTrip } from "@/lib/domain/trips/create";
 import type {
@@ -65,17 +65,22 @@ export async function handleMessage(
   const state = session.state as ConversationState;
   const data = (session.stateDataJson ?? {}) as ConversationData;
 
-  const { nextState, nextData, reply } = await processState(
+  const { nextState, nextData, reply, linkUserId } = await processState(
     state,
     data,
     input,
     session.userId
   );
 
-  // Persist state update
+  // Persist state update (and optionally link the userId)
   await db
     .update(botSessions)
-    .set({ state: nextState, stateDataJson: nextData, updatedAt: new Date() })
+    .set({
+      state: nextState,
+      stateDataJson: nextData,
+      updatedAt: new Date(),
+      ...(linkUserId ? { userId: linkUserId } : {}),
+    })
     .where(eq(botSessions.id, session.id));
 
   await channel.sendMessage(channelUserId, reply);
@@ -90,8 +95,118 @@ async function processState(
   nextState: ConversationState;
   nextData: ConversationData;
   reply: Parameters<Channel["sendMessage"]>[1];
+  linkUserId?: string;
 }> {
-  // Handle /start and /newtrip from any state
+  // ── Account linking: /start link_TOKEN ──────────────────────────────────────
+  if (input.startsWith("/start link_")) {
+    const token = input.slice("/start link_".length).trim();
+    const [linkToken] = await db
+      .select()
+      .from(telegramLinkTokens)
+      .where(eq(telegramLinkTokens.token, token))
+      .limit(1);
+
+    if (!linkToken || linkToken.usedAt || linkToken.expiresAt < new Date()) {
+      return {
+        nextState: state,
+        nextData: data,
+        reply: {
+          text: "This link has expired or already been used. Generate a new one from Settings in the app.",
+        },
+      };
+    }
+
+    // Mark token as used
+    await db
+      .update(telegramLinkTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(telegramLinkTokens.id, linkToken.id));
+
+    return {
+      nextState: "IDLE",
+      nextData: {},
+      linkUserId: linkToken.userId,
+      reply: {
+        text: "✅ *Account linked!* You're all set.\n\nType /newtrip to create your first trip.",
+        buttons: [[{ label: "✈️ New trip", data: "/newtrip" }]],
+      },
+    };
+  }
+
+  // ── Checklist toggle: check:ITEMID ──────────────────────────────────────────
+  if (input.startsWith("check:")) {
+    const itemId = input.slice("check:".length);
+
+    if (!userId) {
+      return {
+        nextState: "IDLE",
+        nextData: {},
+        reply: { text: "Please link your account first via Settings in the app." },
+      };
+    }
+
+    const [item] = await db
+      .select()
+      .from(checklistItems)
+      .where(eq(checklistItems.id, itemId))
+      .limit(1);
+
+    if (!item) {
+      return { nextState: state, nextData: data, reply: { text: "Item not found." } };
+    }
+
+    // Verify item belongs to a trip owned by this user
+    const [trip] = await db
+      .select()
+      .from(trips)
+      .where(and(eq(trips.id, item.tripId), eq(trips.userId, userId)))
+      .limit(1);
+
+    if (!trip) {
+      return { nextState: state, nextData: data, reply: { text: "Item not found." } };
+    }
+
+    await db
+      .update(checklistItems)
+      .set({ done: true, updatedAt: new Date() })
+      .where(eq(checklistItems.id, itemId));
+
+    return buildChecklistReply(trip.id, trip.destinationText, "VIEWING_CHECKLIST", {
+      ...data,
+      viewingTripId: trip.id,
+    });
+  }
+
+  // ── Checklist view: /checklist:TRIPID or refresh:TRIPID ─────────────────────
+  const checklistMatch = input.match(/^(?:\/checklist:|refresh:)([0-9a-f-]{36})$/i);
+  if (checklistMatch) {
+    const tripId = checklistMatch[1];
+
+    if (!userId) {
+      return {
+        nextState: "IDLE",
+        nextData: {},
+        reply: { text: "Please link your account first via Settings in the app." },
+      };
+    }
+
+    const [trip] = await db
+      .select()
+      .from(trips)
+      .where(and(eq(trips.id, tripId), eq(trips.userId, userId)))
+      .limit(1);
+
+    if (!trip) {
+      return { nextState: "IDLE", nextData: {}, reply: { text: "Trip not found." } };
+    }
+
+    return buildChecklistReply(tripId, trip.destinationText, "VIEWING_CHECKLIST", {
+      ...data,
+      viewingTripId: tripId,
+    });
+  }
+
+  // ── /start (without token) ───────────────────────────────────────────────────
   if (input === "/start") {
     return {
       nextState: "IDLE",
@@ -160,9 +275,7 @@ async function processState(
         return {
           nextState: "ASKING_START_DATE",
           nextData: data,
-          reply: {
-            text: "Please use YYYY-MM-DD format (e.g., 2025-08-14).",
-          },
+          reply: { text: "Please use YYYY-MM-DD format (e.g., 2025-08-14)." },
         };
       }
       return {
@@ -199,16 +312,14 @@ async function processState(
         "bag:unknown": "unknown",
       };
       const baggage = bagMap[input] ?? "unknown";
-
       const newData = { ...data, baggage };
 
-      // Create the trip
       if (!userId) {
         return {
           nextState: "IDLE",
           nextData: {},
           reply: {
-            text: "You need to link your account first. Visit the web app to sign in.",
+            text: "You need to link your account first. Open the app → Settings → Connect Telegram.",
           },
         };
       }
@@ -227,7 +338,7 @@ async function processState(
           nextState: "IDLE",
           nextData: {},
           reply: {
-            text: `✅ Trip created!\n\n📍 ${trip.destinationText}\n📅 ${trip.startDate} → ${trip.endDate}\n\nYour checklist is ready! Open the app to view and complete it.`,
+            text: `✅ Trip created!\n\n📍 ${trip.destinationText}\n📅 ${trip.startDate} → ${trip.endDate}\n\nYour checklist is ready!`,
             buttons: [[{ label: "📋 View checklist", data: `/checklist:${trip.id}` }]],
           },
         };
@@ -235,11 +346,24 @@ async function processState(
         return {
           nextState: "IDLE",
           nextData: {},
-          reply: {
-            text: "Something went wrong creating your trip. Please try again.",
-          },
+          reply: { text: "Something went wrong creating your trip. Please try again." },
         };
       }
+    }
+
+    case "VIEWING_CHECKLIST": {
+      const tripId = data.viewingTripId;
+      if (tripId) {
+        return buildChecklistReply(tripId, "your trip", "VIEWING_CHECKLIST", data);
+      }
+      return {
+        nextState: "IDLE",
+        nextData: {},
+        reply: {
+          text: "Type /newtrip to create a new trip.",
+          buttons: [[{ label: "✈️ New trip", data: "/newtrip" }]],
+        },
+      };
     }
 
     default:
@@ -249,4 +373,52 @@ async function processState(
         reply: { text: "Type /newtrip to get started." },
       };
   }
+}
+
+// ─── Checklist formatting helper ──────────────────────────────────────────────
+
+async function buildChecklistReply(
+  tripId: string,
+  destinationText: string,
+  nextState: ConversationState,
+  nextData: ConversationData
+): Promise<{
+  nextState: ConversationState;
+  nextData: ConversationData;
+  reply: Parameters<Channel["sendMessage"]>[1];
+}> {
+  const items = await db
+    .select()
+    .from(checklistItems)
+    .where(eq(checklistItems.tripId, tripId))
+    .orderBy(checklistItems.priority);
+
+  const doneCount = items.filter((i) => i.done).length;
+  const total = items.length;
+  const undone = items.filter((i) => !i.done);
+
+  const lines = items.slice(0, 20).map(
+    (i) => `${i.done ? "✅" : "⬜"} ${i.text}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`
+  );
+  if (items.length > 20) lines.push(`_…and ${items.length - 20} more items_`);
+
+  const text = `📋 *${destinationText}*\n${doneCount}/${total} packed\n\n${lines.join("\n")}`;
+
+  // Group up to 5 unchecked items as quick-check buttons (2 per row)
+  const checkButtons = undone.slice(0, 5).map((i) => ({
+    label: `✓ ${i.text.slice(0, 22)}`,
+    data: `check:${i.id}`,
+  }));
+
+  const buttons: { label: string; data: string }[][] = [];
+  for (let i = 0; i < checkButtons.length; i += 2) {
+    buttons.push(checkButtons.slice(i, i + 2));
+  }
+  buttons.push([{ label: "🔄 Refresh", data: `refresh:${tripId}` }]);
+
+  return {
+    nextState,
+    nextData: { ...nextData, viewingTripId: tripId },
+    reply: { text, buttons },
+  };
 }

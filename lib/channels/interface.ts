@@ -42,4 +42,5 @@ export interface ConversationData {
   startDate?: string;
   endDate?: string;
   baggage?: "carry-on" | "checked" | "unknown";
+  viewingTripId?: string;
 }
