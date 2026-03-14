@@ -18,10 +18,8 @@ interface TelegramUpdate {
 export async function POST(req: NextRequest) {
   // Verify webhook secret
   const secret = req.headers.get("x-telegram-bot-api-secret-token");
-  if (
-    process.env.TELEGRAM_WEBHOOK_SECRET &&
-    secret !== process.env.TELEGRAM_WEBHOOK_SECRET
-  ) {
+  const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  if (expectedSecret && secret !== expectedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
