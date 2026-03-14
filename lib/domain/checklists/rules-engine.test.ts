@@ -18,17 +18,19 @@ describe("generateChecklist", () => {
     expect(texts.some((t) => t.toLowerCase().includes("toothbrush"))).toBe(true);
   });
 
-  it("adds passport and visa check for international trips", () => {
+  it("adds international travel items for international trips", () => {
     const items = generateChecklist({ ...baseInput, isInternational: true });
     const sourceRules = items.map((i) => i.sourceRule);
     expect(sourceRules).toContain("passport");
-    expect(sourceRules).toContain("visa-check");
+    expect(sourceRules).toContain("travel-insurance");
+    expect(sourceRules).toContain("esim");
   });
 
-  it("does NOT add visa items for domestic trips", () => {
+  it("does NOT add international items for domestic trips", () => {
     const items = generateChecklist({ ...baseInput, isInternational: false });
     const sourceRules = items.map((i) => i.sourceRule);
-    expect(sourceRules).not.toContain("visa-check");
+    expect(sourceRules).not.toContain("travel-insurance");
+    expect(sourceRules).not.toContain("esim");
   });
 
   it("adds business items for business trips", () => {
@@ -77,15 +79,15 @@ describe("generateChecklist", () => {
     expect(sourceRules).toContain("swimwear");
   });
 
-  it("adds liquids-bag for carry-on and removes warm-coat", () => {
+  it("removes bulky items (warm-coat, swimwear) for carry-on", () => {
     const items = generateChecklist({
       ...baseInput,
       baggage: "carry-on",
       weather: { bucket: "cold", rainProbability: 0.0, avgTempC: 5, fetchedAt: "" },
     });
     const sourceRules = items.map((i) => i.sourceRule);
-    expect(sourceRules).toContain("liquids-bag");
     expect(sourceRules).not.toContain("warm-coat");
+    expect(sourceRules).toContain("warm-layers");
   });
 
   it("returns no duplicate items", () => {

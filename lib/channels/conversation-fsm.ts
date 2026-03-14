@@ -5,7 +5,7 @@
  */
 
 import { db } from "@/lib/db";
-import { botSessions, users } from "@/lib/db/schema";
+import { botSessions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createTrip } from "@/lib/domain/trips/create";
 import type {

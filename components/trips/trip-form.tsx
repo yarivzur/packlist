@@ -74,7 +74,7 @@ interface TripFormProps {
   homeCountry: string | null;
 }
 
-export function TripForm({ nationality, homeCountry: _homeCountry }: TripFormProps) {
+export function TripForm({ nationality }: TripFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);

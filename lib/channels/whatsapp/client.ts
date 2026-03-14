@@ -27,7 +27,7 @@ export const whatsappChannel: Channel = {
           type: "button",
           body: { text: message.text },
           action: {
-            buttons: flatButtons.map((btn, i) => ({
+            buttons: flatButtons.map((btn) => ({
               type: "reply",
               reply: {
                 id: btn.data,

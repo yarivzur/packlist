@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { reminders } from "@/lib/db/schema";
-import { parseISO, subHours, subDays, addHours } from "date-fns";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { subHours } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
 
 export interface ReminderSchedule {
   type: "72h" | "48h" | "24h" | "12h" | "leave";

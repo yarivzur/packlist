@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { reminders, trips } from "@/lib/db/schema";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -39,7 +39,7 @@ export default async function RemindersPage() {
       {upcoming.length === 0 && past.length === 0 && (
         <div className="rounded-xl border-2 border-dashed p-12 text-center">
           <Bell className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No reminders yet — plan a trip and we'll keep you on track!</p>
+          <p className="text-muted-foreground">No reminders yet — plan a trip and we&apos;ll keep you on track!</p>
         </div>
       )}
 

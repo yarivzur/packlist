@@ -99,11 +99,11 @@ export function ChecklistView({ tripId, grouped, reviewed }: ChecklistViewProps)
       {isReview && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
           <div className="flex items-start gap-3">
-            <span className="text-xl shrink-0" aria-hidden>✏️</span>
+            <span className="text-xl shrink-0" aria-hidden>🎒</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold leading-snug">Your list is ready — make it yours!</p>
+              <p className="text-sm font-semibold leading-snug">Your list is ready!</p>
               <p className="text-xs text-muted-foreground mt-0.5 leading-4">
-                Trim anything you won&apos;t use and tweak the quantities. Happy with it? Let&apos;s go!
+                We&apos;ve tailored it to your trip. Adjust anything that doesn&apos;t fit, or just dive in.
               </p>
             </div>
           </div>
@@ -114,7 +114,7 @@ export function ChecklistView({ tripId, grouped, reviewed }: ChecklistViewProps)
             disabled={confirming}
           >
             <PackageCheck className="h-4 w-4" />
-            {confirming ? "Almost there…" : "Looks great — let's pack! 🎒"}
+            {confirming ? "Almost there…" : "Start packing! 🎒"}
           </Button>
         </div>
       )}
@@ -208,7 +208,7 @@ export function ChecklistView({ tripId, grouped, reviewed }: ChecklistViewProps)
                   {showDelete && (
                     <button
                       onClick={() => deleteItem(item.id)}
-                      className="hidden group-hover:flex items-center text-muted-foreground hover:text-destructive transition-colors ml-1"
+                      className="flex sm:hidden sm:group-hover:flex items-center text-muted-foreground hover:text-destructive transition-colors ml-1"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -385,11 +385,11 @@ function CategoryGroup({ category, items, isReview, onToggle, onDelete }: Catego
                   </div>
                 )}
 
-                {/* Delete button */}
+                {/* Delete button — always visible on touch, hover-only on desktop */}
                 {showDelete && (
                   <button
                     onClick={() => onDelete(item.id)}
-                    className="hidden group-hover:flex items-center text-muted-foreground hover:text-destructive transition-colors mt-0.5 ml-1"
+                    className="flex sm:hidden sm:group-hover:flex items-center text-muted-foreground hover:text-destructive transition-colors mt-0.5 ml-1"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

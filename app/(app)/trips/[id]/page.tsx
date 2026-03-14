@@ -148,7 +148,7 @@ export default async function TripDetailPage({
           />
         </div>
         {progress === 100 && (
-          <p className="text-sm text-center font-medium text-primary">🎉 You're all packed! Go enjoy every second.</p>
+          <p className="text-sm text-center font-medium text-primary">🎉 You&apos;re all packed! Go enjoy every second.</p>
         )}
       </div>
 
