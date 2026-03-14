@@ -8,7 +8,8 @@
  * environment (via .env.local / dotenv).
  */
 
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local" });
 
 const [, , webhookBase] = process.argv;
 
@@ -28,21 +29,23 @@ if (!token) {
 
 const webhookUrl = `${webhookBase.replace(/\/$/, "")}/api/webhooks/telegram`;
 
-const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    url: webhookUrl,
-    ...(secret ? { secret_token: secret } : {}),
-    allowed_updates: ["message", "callback_query"],
-  }),
-});
+void (async () => {
+  const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: webhookUrl,
+      ...(secret ? { secret_token: secret } : {}),
+      allowed_updates: ["message", "callback_query"],
+    }),
+  });
 
-const result = await res.json();
+  const result = await res.json() as { ok: boolean; description?: string };
 
-if (result.ok) {
-  console.log(`✅ Webhook registered: ${webhookUrl}`);
-} else {
-  console.error("❌ Failed to register webhook:", result.description);
-  process.exit(1);
-}
+  if (result.ok) {
+    console.log(`✅ Webhook registered: ${webhookUrl}`);
+  } else {
+    console.error("❌ Failed to register webhook:", result.description);
+    process.exit(1);
+  }
+})();

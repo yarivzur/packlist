@@ -291,26 +291,26 @@ export function SettingsForm({ user, telegramConnected }: SettingsFormProps) {
 
 function TelegramConnectRow({ connected }: { connected: boolean }) {
   const [linking, setLinking] = useState(false);
-  const [instruction, setInstruction] = useState<string | null>(null);
+  const [deepLink, setDeepLink] = useState<string | null>(null);
 
   const handleConnect = async () => {
     setLinking(true);
-    setInstruction(null);
+    setDeepLink(null);
     try {
       const res = await fetch("/api/users/telegram/link-token", { method: "POST" });
-      const { deepLink } = await res.json();
-      if (deepLink) {
-        window.open(deepLink, "_blank");
-        setInstruction("Tap 'Start' in Telegram to link your account. Then come back here and refresh.");
-      } else {
-        setInstruction("Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME in your environment to enable deep linking.");
+      const data = await res.json() as { deepLink?: string };
+      if (data.deepLink) {
+        setDeepLink(data.deepLink);
+        window.open(data.deepLink, "_blank");
       }
     } catch {
-      setInstruction("Something went wrong. Please try again.");
+      // ignore — fallback link will still show if deepLink was set
     } finally {
       setLinking(false);
     }
   };
+
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "RashmatzBot";
 
   return (
     <div className="rounded-lg border p-3 space-y-2">
@@ -334,8 +334,17 @@ function TelegramConnectRow({ connected }: { connected: boolean }) {
           </Button>
         )}
       </div>
-      {instruction && (
-        <p className="text-xs text-muted-foreground pl-1">{instruction}</p>
+      {deepLink && (
+        <div className="text-xs text-muted-foreground pl-1 space-y-1">
+          <p>Open <strong>@{botUsername}</strong> in Telegram and tap <strong>Start</strong> to link your account.</p>
+          <p>
+            Link didn&apos;t open?{" "}
+            <a href={deepLink} target="_blank" rel="noopener noreferrer" className="underline text-primary">
+              Click here
+            </a>
+            , then refresh this page.
+          </p>
+        </div>
       )}
     </div>
   );
