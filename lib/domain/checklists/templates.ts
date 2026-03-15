@@ -17,7 +17,6 @@ export interface TemplateItem {
 // Base items for every trip
 export const BASE_ITEMS: TemplateItem[] = [
   // Crucial
-  { id: "passport", text: "Passport", category: "crucial", priority: 10 },
   { id: "id-card", text: "ID card / driver's license", category: "crucial", priority: 15 },
   { id: "phone", text: "Phone", category: "crucial", priority: 11 },
   { id: "phone-charger", text: "Phone charger", category: "crucial", priority: 12 },
@@ -36,6 +35,7 @@ export const BASE_ITEMS: TemplateItem[] = [
 
 // International travel extras
 export const INTERNATIONAL_ITEMS: TemplateItem[] = [
+  { id: "passport", text: "Passport", category: "crucial", priority: 10 },
   { id: "travel-insurance", text: "Travel insurance docs", category: "crucial", priority: 16 },
   { id: "esim", text: "SIM card / eSIM for destination", category: "tech", priority: 35 },
   { id: "power-adapter", text: "Power adapter (check plug type)", category: "tech", priority: 30 },

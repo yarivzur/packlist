@@ -134,6 +134,9 @@ export default async function TripDetailPage({
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 leading-4">
               {getWeatherTip(weather.bucket, weather.rainProbability)}
+              {weather.isHistorical && (
+                <span className="ml-1 opacity-70">(based on last year&apos;s climate)</span>
+              )}
             </p>
           </div>
         </div>

@@ -65,7 +65,7 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
   if (input.baggage === "carry-on") {
     items.push(...CARRY_ON_ITEMS);
     // Remove bulky clothing suggestions for carry-on
-    const bulkyIds = new Set(["warm-coat", "swimwear"]);
+    const bulkyIds = new Set(["warm-coat"]);
     deduplicated = deduplicateItems(items.filter((i) => !bulkyIds.has(i.id)));
   } else {
     deduplicated = deduplicateItems(items);
