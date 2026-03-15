@@ -174,6 +174,27 @@ lib/channels/
 - Needs a `source_trip_id` column on `trips` to track lineage
 - UX: extra step in web wizard + bot prompt after baggage selection
 
+**O1 — App name**
+- Current working name: "PackList" / "Rashmatz" (bot name)
+- Decide on a single final name — affects: app title, bot username, domain, OG tags, manifest
+- Once decided: rename bot if needed, update `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`, update all UI strings, update manifest name
+
+**O2 — WhatsApp production number**
+- Replace Meta test number (limited to 5 whitelisted recipients) with a real WhatsApp Business number
+- Options: dedicated SIM registered via Meta dashboard, or VoIP number (Google Voice etc.)
+- Steps: add number in Meta Business Manager → verify via SMS/call → update env vars:
+  - `WHATSAPP_PHONE_NUMBER_ID` → new phone number ID
+  - `NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER` → new number in intl format
+- Test number to retire: `+1 555 142 0930` (ID: `1043488418843332`)
+
+**O3 — Landing page + domain**
+- Static marketing page explaining what the app does — entry point for new users
+- Needs a domain (currently only on `packlist-beta.vercel.app`)
+- Content: hero ("Smart packing lists, auto-generated for every trip"), feature highlights, bot preview, CTA → sign in
+- Tech options: same Next.js repo (add `app/(marketing)/page.tsx`) or separate static site
+- Domain ideas to evaluate: packli.st, packright.app, smartpack.travel, tripack.app, rashmatz.com
+- SEO basics: OG tags, sitemap, robots.txt
+
 **M6 — PWA + Polish**
 - `manifest.json`, service worker, install prompt
 - Error states + loading skeletons
