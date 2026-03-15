@@ -282,7 +282,10 @@ export function SettingsForm({ user, telegramConnected, whatsappConnected }: Set
 // ─── WhatsApp connect row ─────────────────────────────────────────────────────
 
 function WhatsAppConnectRow({ connected }: { connected: boolean }) {
+  const router = useRouter();
   const [linking, setLinking] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [deepLink, setDeepLink] = useState<string | null>(null);
 
   const handleConnect = async () => {
@@ -302,6 +305,19 @@ function WhatsAppConnectRow({ connected }: { connected: boolean }) {
     }
   };
 
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await fetch("/api/users/whatsapp/disconnect", { method: "DELETE" });
+      setConfirmDisconnect(false);
+      router.refresh();
+    } catch {
+      // ignore
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <div className="flex items-center justify-between">
@@ -313,9 +329,26 @@ function WhatsAppConnectRow({ connected }: { connected: boolean }) {
           </div>
         </div>
         {connected ? (
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-xs font-medium text-green-600">Connected</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="text-xs font-medium text-green-600">Connected</span>
+            </div>
+            {confirmDisconnect ? (
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="destructive" onClick={handleDisconnect} disabled={disconnecting} className="h-7 text-xs px-2">
+                  {disconnecting && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                  Confirm
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setConfirmDisconnect(false)} className="h-7 text-xs px-2">
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="ghost" onClick={() => setConfirmDisconnect(true)} className="h-7 text-xs px-2 text-muted-foreground hover:text-destructive">
+                Disconnect
+              </Button>
+            )}
           </div>
         ) : (
           <Button size="sm" variant="outline" onClick={handleConnect} disabled={linking}>
@@ -343,7 +376,10 @@ function WhatsAppConnectRow({ connected }: { connected: boolean }) {
 // ─── Telegram connect row ─────────────────────────────────────────────────────
 
 function TelegramConnectRow({ connected }: { connected: boolean }) {
+  const router = useRouter();
   const [linking, setLinking] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [deepLink, setDeepLink] = useState<string | null>(null);
 
   const handleConnect = async () => {
@@ -363,6 +399,19 @@ function TelegramConnectRow({ connected }: { connected: boolean }) {
     }
   };
 
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await fetch("/api/users/telegram/disconnect", { method: "DELETE" });
+      setConfirmDisconnect(false);
+      router.refresh();
+    } catch {
+      // ignore
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "RashmatzBot";
 
   return (
@@ -376,9 +425,26 @@ function TelegramConnectRow({ connected }: { connected: boolean }) {
           </div>
         </div>
         {connected ? (
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-xs font-medium text-green-600">Connected</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="text-xs font-medium text-green-600">Connected</span>
+            </div>
+            {confirmDisconnect ? (
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="destructive" onClick={handleDisconnect} disabled={disconnecting} className="h-7 text-xs px-2">
+                  {disconnecting && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                  Confirm
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setConfirmDisconnect(false)} className="h-7 text-xs px-2">
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="ghost" onClick={() => setConfirmDisconnect(true)} className="h-7 text-xs px-2 text-muted-foreground hover:text-destructive">
+                Disconnect
+              </Button>
+            )}
           </div>
         ) : (
           <Button size="sm" variant="outline" onClick={handleConnect} disabled={linking}>
