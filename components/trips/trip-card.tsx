@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { Trip } from "@/lib/db/schema";
 import { ChevronRight } from "lucide-react";
 import { countryCodeToFlag } from "@/lib/utils/country-flag";
+import { DeleteTripButton } from "./delete-trip-button";
 
 const TRIP_TYPE_LABELS: Record<string, string> = {
   business: "Business",
@@ -27,7 +30,7 @@ export function TripCard({ trip }: TripCardProps) {
   const flag = countryCodeToFlag(trip.destinationCountry);
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="group hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -56,6 +59,7 @@ export function TripCard({ trip }: TripCardProps) {
                 </span>
               )}
             </div>
+            <DeleteTripButton tripId={trip.id} variant="card" />
             <Button variant="ghost" size="icon" asChild>
               <Link href={`/trips/${trip.id}`}>
                 <ChevronRight className="h-4 w-4" />

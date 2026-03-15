@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
+import { DeleteTripRedirectButton } from "@/components/trips/delete-trip-redirect-button";
 import { CATEGORY_ORDER } from "@/lib/domain/checklists/templates";
 import type { ChecklistCategory } from "@/lib/domain/checklists/templates";
 import { countryCodeToFlag } from "@/lib/utils/country-flag";
@@ -78,9 +79,12 @@ export default async function TripDetailPage({
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/trips/${trip.id}/edit`}><Pencil className="h-4 w-4" /></Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/trips/${trip.id}/edit`}><Pencil className="h-4 w-4" /></Link>
+          </Button>
+          <DeleteTripRedirectButton tripId={trip.id} />
+        </div>
       </div>
 
       {/* Trip meta badges */}
