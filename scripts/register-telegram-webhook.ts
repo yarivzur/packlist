@@ -2,7 +2,7 @@
  * Register (or update) the Telegram webhook for this bot.
  *
  * Usage:
- *   npx tsx scripts/register-telegram-webhook.ts https://yourapp.vercel.app
+ *   npx tsx scripts/register-telegram-webhook.ts https://app.packlist.be
  *
  * The script reads TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET from the
  * environment (via .env.local / dotenv).
@@ -15,7 +15,7 @@ const [, , webhookBase] = process.argv;
 
 if (!webhookBase) {
   console.error("Usage: npx tsx scripts/register-telegram-webhook.ts <BASE_URL>");
-  console.error("  e.g. npx tsx scripts/register-telegram-webhook.ts https://yourapp.vercel.app");
+  console.error("  e.g. npx tsx scripts/register-telegram-webhook.ts https://app.packlist.be");
   process.exit(1);
 }
 

@@ -118,8 +118,8 @@ lib/channels/
   - After trip creation → shows checklist immediately (no intermediate IDLE state)
   - `/checklist:TRIPID` / `refresh:TRIPID` → formatted checklist with quick-check buttons
   - `check:ITEMID` → toggles item done, refreshes view
-- Webhook registered at `https://packlist-beta.vercel.app/api/webhooks/telegram`
-- **Known infra gotcha**: `packlist-yariv-zurs-projects.vercel.app` has Vercel SSO protection; use `packlist-beta.vercel.app` as the public production URL
+- Webhook registered at `https://app.packlist.be/api/webhooks/telegram`
+- **Known infra gotcha**: `packlist-yariv-zurs-projects.vercel.app` has Vercel SSO protection; production URL is `https://app.packlist.be`
 
 **M5 — WhatsApp Channel**
 - `whatsappLinkTokens` table in schema — pushed to Neon
@@ -187,12 +187,11 @@ lib/channels/
   - `NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER` → new number in intl format
 - Test number to retire: `+1 555 142 0930` (ID: `1043488418843332`)
 
-**O3 — Landing page + domain**
+**O3 — Landing page + domain** *(domain: packlist.be — in progress)*
 - Static marketing page explaining what the app does — entry point for new users
-- Needs a domain (currently only on `packlist-beta.vercel.app`)
+- Domain: `packlist.be` — app on `app.packlist.be`, landing on `www.packlist.be`
 - Content: hero ("Smart packing lists, auto-generated for every trip"), feature highlights, bot preview, CTA → sign in
-- Tech options: same Next.js repo (add `app/(marketing)/page.tsx`) or separate static site
-- Domain ideas to evaluate: packli.st, packright.app, smartpack.travel, tripack.app, rashmatz.com
+- Same Next.js repo: add `app/(marketing)/page.tsx`, serve from `www.packlist.be` Vercel project
 - SEO basics: OG tags, sitemap, robots.txt
 
 **M6 — PWA + Polish**
