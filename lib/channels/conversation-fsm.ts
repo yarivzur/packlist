@@ -459,7 +459,7 @@ async function buildChecklistReply(
   for (let i = 0; i < checkButtons.length; i += 2) {
     buttons.push(checkButtons.slice(i, i + 2));
   }
-  const appBase = (process.env.AUTH_URL ?? "https://packlist-beta.vercel.app").replace(/\/$/, "");
+  const appBase = (process.env.AUTH_URL ?? "https://app.packlist.be").replace(/\/$/, "");
   buttons.push([
     { label: "🌐 Open in app", url: `${appBase}/trips/${tripId}` },
     { label: "🔄 Refresh", data: `refresh:${tripId}` },
