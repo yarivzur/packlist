@@ -121,6 +121,21 @@ lib/channels/
 - Webhook registered at `https://packlist-beta.vercel.app/api/webhooks/telegram`
 - **Known infra gotcha**: `packlist-yariv-zurs-projects.vercel.app` has Vercel SSO protection; use `packlist-beta.vercel.app` as the public production URL
 
+**M5 — WhatsApp Channel**
+- `whatsappLinkTokens` table in schema — pushed to Neon
+- Account linking: `POST /api/users/whatsapp/link-token` (wa.me deep link with pre-filled `link_TOKEN`)
+- Account status: `GET /api/users/whatsapp/status`
+- FSM channel-aware: WhatsApp uses `link_TOKEN` pattern (no `/start`); Telegram keeps `/start link_TOKEN`
+- On trip creation: FSM sends weather + visa as separate pre-messages before checklist
+  - Weather: shows forecast if available, "too early" fallback if trip > 16 days out
+  - Visa: shown when nationality is set in Settings
+- WhatsApp client appends URL buttons as text links (WA interactive messages don't support URLs natively)
+- Settings form: functional `WhatsAppConnectRow` (replaced "Coming soon")
+- Reminder dispatch already wired to WhatsApp via `dispatch.ts`
+- **Production number**: currently using Meta test number — needs a real WA Business number before going live
+  - Test number: `+1 555 142 0930` (Phone number ID: `1043488418843332`)
+  - Env var `NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER=15551420930` set in Vercel
+
 ---
 
 ### Backlog 📋
@@ -132,10 +147,32 @@ lib/channels/
 - Voltage difference check → add "Check device voltage compatibility" item
 - New files: `lib/domain/power/plug-lookup.ts` + `lib/domain/power/plug-data.json`
 
-**M5 — WhatsApp Channel**
-- Meta WhatsApp Cloud API setup + webhook at `/api/webhooks/whatsapp`
-- Reuse same conversation state machine (channel-agnostic)
-- Reminder dispatch via WhatsApp
+**A6 — Flexible trip duration input (bot)**
+- In the bot's `ASKING_END_DATE` step, also accept a number of days (e.g. "7" or "7 days")
+- Calculate `endDate` from `startDate + N - 1 days` and confirm back to user
+- FSM only; web wizard already has date pickers
+
+**A7 — Trip deletion**
+- Web: delete button on trip list page and/or trip detail page
+- Confirmation dialog before delete (trips cascade-delete checklist_items + reminders)
+- API: `DELETE /api/trips/[id]` — verify ownership, delete trip
+- Bot: optional `/delete:TRIPID` command
+
+**A8 — Post-trip retro**
+- After `endDate` passes, send a bot message (or in-app prompt): "How did packing go?"
+- Quick replies: "Packed too much 🧳", "Just right ✅", "Forgot things 😅"
+- Store response on trip (`retro_rating` column + `retro_note` text)
+- Use retro signal to personalise future lists (e.g. flag items marked "always forget", suppress items marked "never used")
+- Cron job checks for trips that ended yesterday and dispatches retro prompt via connected channels
+- New DB columns: `trips.retro_rating` (enum: too_much | just_right | forgot_things), `trips.retro_note`
+
+**A9 — List reuse ("use my previous list")**
+- On trip creation (web + bot), detect if user has a prior trip of the same type
+- Offer choice: "Start from your last Business trip list" vs "Start fresh"
+- If reusing: copy checklist items from source trip, then apply length/weather/baggage modifiers on top
+- Smart delta: items added by user in source trip are preserved; auto-generated items are re-run through rules engine
+- Needs a `source_trip_id` column on `trips` to track lineage
+- UX: extra step in web wizard + bot prompt after baggage selection
 
 **M6 — PWA + Polish**
 - `manifest.json`, service worker, install prompt
@@ -155,7 +192,7 @@ lib/channels/
 ## Key files
 | File | Purpose |
 |---|---|
-| `lib/db/schema.ts` | Full DB schema (incl. telegramLinkTokens) |
+| `lib/db/schema.ts` | Full DB schema (incl. telegramLinkTokens, whatsappLinkTokens) |
 | `lib/domain/checklists/templates.ts` | All static checklist item banks |
 | `lib/domain/checklists/rules-engine.ts` | Checklist generation logic + currency personalisation |
 | `lib/domain/currency/currency-lookup.ts` | Country → currency mapping (80+ countries) |
@@ -164,7 +201,10 @@ lib/channels/
 | `lib/domain/visa/visa-check.ts` | checkVisa() + checklist injection |
 | `lib/channels/conversation-fsm.ts` | Telegram/WhatsApp conversation state machine |
 | `lib/channels/telegram/client.ts` | Telegram sendMessage API wrapper |
-| `components/settings/settings-form.tsx` | Theme + nationality + homeCountry + Telegram connect UI |
+| `components/settings/settings-form.tsx` | Theme + nationality + homeCountry + Telegram/WhatsApp connect UI |
+| `app/api/users/whatsapp/link-token/route.ts` | POST — generate WhatsApp link token |
+| `app/api/users/whatsapp/status/route.ts` | GET — check if WhatsApp is connected |
+| `app/api/webhooks/whatsapp/route.ts` | WhatsApp webhook handler (GET verify + POST messages) |
 | `components/trips/trip-form.tsx` | Multi-step trip creation wizard |
 | `app/(app)/trips/[id]/page.tsx` | Trip detail + visa badge |
 | `app/api/trips/route.ts` | POST /api/trips |
@@ -186,6 +226,7 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=RashmatzBot
 WHATSAPP_ACCESS_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 WHATSAPP_VERIFY_TOKEN=
+NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER=
 CRON_SECRET=
 # Post-MVP:
 TRIPIT_CLIENT_ID=
