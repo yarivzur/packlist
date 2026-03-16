@@ -95,6 +95,10 @@ lib/channels/
 - Removed duplicate "Check visa requirements" generic item from `INTERNATIONAL_ITEMS`
 - Removed duplicate "Laptop in accessible part of bag" and "100ml liquids" items (emptied `CARRY_ON_ITEMS`)
 - Removed always-appended "Check entry requirements & passport validity" from `visaChecklistItems()`
+- Moved `passport` from `BASE_ITEMS` → `INTERNATIONAL_ITEMS` (domestic trips no longer show passport)
+- Lowered hot weather threshold from 22°C → 20°C (beach destinations like Eilat now correctly get sunscreen/sunglasses/swimwear)
+- Removed swimwear from carry-on bulky exclusion list
+- Historical climate fallback: trips > 16 days out use Open-Meteo archive API (same period, −1 year) instead of returning null; `WeatherData.isHistorical` flag added; trip detail page shows "(based on last year's climate)" note
 
 **A3 — UX Review (applied fixes)**
 - Full UX review run against all core flows (report in gitignored `docs/`)

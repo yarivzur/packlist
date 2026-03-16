@@ -77,6 +77,7 @@ export async function createTrip(input: CreateTripInput) {
     destination: input.destinationText,
     destinationCountry,
     visaResult,
+    userHomeCountry: input.userHomeCountry,
   });
 
   // 7. Insert checklist items

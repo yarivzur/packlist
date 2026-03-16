@@ -12,6 +12,7 @@ import {
   CATEGORY_ORDER,
   type ChecklistCategory,
 } from "@/lib/domain/checklists/templates";
+import { PlugTypeIcon, extractPlugTypes, PLUG_TYPE_NAMES } from "./plug-type-icon";
 
 /** Split "sunglasses, sunscreen and a hat" → ["sunglasses", "sunscreen", "a hat"] */
 function parseItemText(raw: string): string[] {
@@ -356,6 +357,23 @@ function CategoryGroup({ category, items, isReview, onToggle, onDelete }: Catego
                   >
                     {item.text}
                   </span>
+                  {/* Plug socket illustrations for power adapter items */}
+                  {item.sourceRule === "power-adapter" && (() => {
+                    const types = extractPlugTypes(item.text);
+                    if (!types.length) return null;
+                    return (
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {types.map((t) => (
+                          <div key={t} className="flex flex-col items-center gap-0.5">
+                            <PlugTypeIcon type={t} size={36} />
+                            <span className="text-[10px] text-muted-foreground leading-none font-medium">
+                              {PLUG_TYPE_NAMES[t] ?? `Type ${t}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   {item.rationale && (
                     <p className="text-xs text-muted-foreground mt-0.5 leading-4">
                       {item.rationale}

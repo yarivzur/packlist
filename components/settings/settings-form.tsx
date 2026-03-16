@@ -264,6 +264,20 @@ export function SettingsForm({ user, telegramConnected, whatsappConnected }: Set
         </Button>
       </div>
 
+      {/* Support */}
+      <div className="rounded-xl border p-5 space-y-2">
+        <h2 className="font-semibold">Support</h2>
+        <p className="text-sm text-muted-foreground">
+          Have a question or found a bug?{" "}
+          <a
+            href="mailto:support@packlist.be"
+            className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+          >
+            support@packlist.be
+          </a>
+        </p>
+      </div>
+
       {/* Connected channels */}
       <div className="rounded-xl border p-5 space-y-4">
         <h2 className="font-semibold">Connected channels</h2>

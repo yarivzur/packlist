@@ -38,7 +38,6 @@ export const INTERNATIONAL_ITEMS: TemplateItem[] = [
   { id: "passport", text: "Passport", category: "crucial", priority: 10 },
   { id: "travel-insurance", text: "Travel insurance docs", category: "crucial", priority: 16 },
   { id: "esim", text: "SIM card / eSIM for destination", category: "tech", priority: 35 },
-  { id: "power-adapter", text: "Power adapter (check plug type)", category: "tech", priority: 30 },
   { id: "currency", text: "Local currency / Revolut/Wise card", category: "crucial", priority: 17 },
 ];
 

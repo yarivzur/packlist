@@ -1,6 +1,7 @@
 import type { WeatherData } from "@/lib/domain/weather/open-meteo";
 import { visaChecklistItems, type VisaCheckResult } from "@/lib/domain/visa/visa-check";
 import { getCurrencyForCountry } from "@/lib/domain/currency/currency-lookup";
+import { getAdapterInfo } from "@/lib/domain/power/plug-lookup";
 import {
   BASE_ITEMS,
   INTERNATIONAL_ITEMS,
@@ -25,6 +26,8 @@ export interface RulesInput {
   destinationCountry?: string | null;
   /** Pre-computed visa check result to inject items (optional) */
   visaResult?: VisaCheckResult | null;
+  /** User's home country (ISO 3166-1 alpha-2). Used for power adapter check. */
+  userHomeCountry?: string | null;
 }
 
 export interface GeneratedItem {
@@ -94,6 +97,12 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
         rationale,
       };
     });
+
+  // Inject power adapter items for international trips
+  if (input.isInternational) {
+    const powerItems = buildPowerAdapterItems(input.userHomeCountry, input.destinationCountry);
+    templateResults.push(...powerItems);
+  }
 
   // Inject visa checklist items (crucial category, highest priority)
   if (input.isInternational && input.visaResult) {
@@ -175,6 +184,59 @@ function deduplicateItems(items: TemplateItem[]): TemplateItem[] {
     seen.add(item.id);
     return true;
   });
+}
+
+// ─── Power adapter helpers ────────────────────────────────────────────────────
+
+function buildPowerAdapterItems(
+  homeCountry: string | null | undefined,
+  destCountry: string | null | undefined
+): GeneratedItem[] {
+  // No home or destination data → fall back to generic reminder
+  if (!homeCountry || !destCountry) {
+    return [
+      {
+        text: "Power adapter (check plug type for destination)",
+        category: "tech",
+        priority: 30,
+        sourceRule: "power-adapter-generic",
+        quantity: 1,
+        rationale: null,
+      },
+    ];
+  }
+
+  const info = getAdapterInfo(homeCountry, destCountry);
+
+  // Same plug family, same voltage → nothing needed
+  if (!info) return [];
+
+  const result: GeneratedItem[] = [];
+
+  if (info.neededPlugTypes.length > 0) {
+    const typeLabel = info.neededPlugTypes.map((t) => `Type ${t}`).join(" / ");
+    result.push({
+      text: `Power adapter (${typeLabel})`,
+      category: "tech",
+      priority: 30,
+      sourceRule: "power-adapter",
+      quantity: 1,
+      rationale: `Destination uses ${typeLabel} sockets`,
+    });
+  }
+
+  if (info.voltageWarning) {
+    result.push({
+      text: "Check device voltage compatibility (destination voltage differs)",
+      category: "tech",
+      priority: 31,
+      sourceRule: "voltage-check",
+      quantity: 1,
+      rationale: "Significant voltage difference between home and destination",
+    });
+  }
+
+  return result;
 }
 
 export function detectIfInternational(
