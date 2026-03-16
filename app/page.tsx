@@ -127,7 +127,7 @@ export default function LandingPage() {
             <div className="mx-auto flex max-w-sm flex-col gap-4 sm:max-w-md sm:flex-row sm:justify-center">
               <div className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-border bg-background px-6 py-4">
                 <Send className="h-5 w-5 text-primary" />
-                <span className="font-medium">@RashmatzBot</span>
+                <span className="font-medium">@PackListBeBot</span>
                 <span className="text-sm text-muted-foreground">Telegram</span>
               </div>
               <div className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-border bg-background px-6 py-4">

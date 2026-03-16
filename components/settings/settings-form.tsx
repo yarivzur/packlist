@@ -426,7 +426,7 @@ function TelegramConnectRow({ connected }: { connected: boolean }) {
     }
   };
 
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "RashmatzBot";
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "PackListBeBot";
 
   return (
     <div className="rounded-lg border p-3 space-y-2">
