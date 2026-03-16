@@ -199,22 +199,25 @@ lib/channels/
 - Same Next.js repo: add `app/(marketing)/page.tsx`, serve from `www.packlist.be` Vercel project
 - SEO basics: OG tags, sitemap, robots.txt
 
-**O4 — Rename Telegram bot to match app name**
-- Current bot username: `@RashmatzBot` — should match the final app name (see O1)
-- Steps:
-  1. Open Telegram → BotFather → `/mybots` → select the bot
-  2. `Edit Bot` → `Edit Name` → set display name
-  3. `Edit Bot` → `Edit Username` → set new `@username` (e.g. `@PackListBot`)
-  4. Update Vercel env var: `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=<new_username>`
-  5. Update `scripts/register-telegram-webhook.ts` if it hardcodes the old name
-  6. Redeploy (`vercel --prod`)
-- Note: existing linked users are unaffected (links are by Telegram user ID, not bot username); deep links to old username will break
+**O4 — Rename Telegram bot to match app name** ✅ completed
+- New bot: `@PackListBeBot`, display name "PackList"
+- Note: Telegram usernames are immutable — had to create a new bot (old: @RashmatzBot)
+- `TELEGRAM_BOT_TOKEN` + `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` updated in Vercel
+- Webhook registered on new bot; existing linked users unaffected (links by Telegram chat ID)
 
 **M6 — PWA + Polish**
 - `manifest.json`, service worker, install prompt
 - Error states + loading skeletons
 - Edit trip + regenerate checklist
 - README complete with setup instructions
+
+**A10 — List sharing**
+- Share a packing list with a travel companion (partner, family member, colleague)
+- Options to consider: read-only share link (no auth required) vs. collaborative editing
+- Shared view: recipient sees the list, can tick items off in real time
+- Web: "Share list" button on trip detail page → generates a short link
+- Possible DB changes: `trip_shares` table (tripId, token, permissions, expiresAt)
+- Nice-to-have: recipient can add/remove items if given edit permission
 
 **M7 — TripIt Integration** *(post-MVP)*
 - TripIt OAuth flow from Settings

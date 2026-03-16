@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 
 type TripType = "business" | "leisure" | "mixed";
 type BaggageMode = "carry-on" | "checked" | "unknown";
@@ -28,6 +28,7 @@ export function TripEditForm({
 }: TripEditFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +65,23 @@ export function TripEditForm({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/regenerate`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Failed to regenerate");
+      }
+      router.push(`/trips/${tripId}`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setRegenerating(false);
     }
   };
 
@@ -184,10 +202,31 @@ export function TripEditForm({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {/* Save button */}
-      <Button onClick={handleSave} disabled={!isValid || loading} className="w-full">
+      <Button onClick={handleSave} disabled={!isValid || loading || regenerating} className="w-full">
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {loading ? "Saving…" : "Save changes"}
       </Button>
+
+      {/* Regenerate checklist */}
+      <div className="rounded-xl border p-5 space-y-3">
+        <h2 className="font-semibold">Regenerate checklist</h2>
+        <p className="text-sm text-muted-foreground">
+          Rebuilds your packing list from scratch based on the current trip details, fresh weather data, and your profile. Items you&apos;ve already ticked off will be reset.
+        </p>
+        <Button
+          variant="outline"
+          onClick={handleRegenerate}
+          disabled={regenerating || loading}
+          className="w-full"
+        >
+          {regenerating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
+          {regenerating ? "Rebuilding list…" : "Regenerate checklist"}
+        </Button>
+      </div>
 
       {/* Delete section */}
       <div className="rounded-xl border border-destructive/30 p-5 space-y-3">
