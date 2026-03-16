@@ -100,7 +100,11 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
 
   // Inject power adapter items for international trips
   if (input.isInternational) {
-    const powerItems = buildPowerAdapterItems(input.userHomeCountry, input.destinationCountry);
+    const powerItems = buildPowerAdapterItems(
+      input.userHomeCountry,
+      input.destinationCountry,
+      input.destination,
+    );
     templateResults.push(...powerItems);
   }
 
@@ -190,7 +194,8 @@ function deduplicateItems(items: TemplateItem[]): TemplateItem[] {
 
 function buildPowerAdapterItems(
   homeCountry: string | null | undefined,
-  destCountry: string | null | undefined
+  destCountry: string | null | undefined,
+  destName?: string,
 ): GeneratedItem[] {
   // No home or destination data → fall back to generic reminder
   if (!homeCountry || !destCountry) {
@@ -215,13 +220,14 @@ function buildPowerAdapterItems(
 
   if (info.neededPlugTypes.length > 0) {
     const typeLabel = info.neededPlugTypes.map((t) => `Type ${t}`).join(" / ");
+    const locationLabel = destName ?? destCountry;
     result.push({
       text: `Power adapter (${typeLabel})`,
       category: "tech",
       priority: 30,
       sourceRule: "power-adapter",
       quantity: 1,
-      rationale: `Destination uses ${typeLabel} sockets`,
+      rationale: `In ${locationLabel}`,
     });
   }
 
