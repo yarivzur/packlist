@@ -162,13 +162,14 @@ lib/channels/
 - API: `DELETE /api/trips/[id]` — verify ownership, delete trip
 - Bot: optional `/delete:TRIPID` command
 
-**A8 — Post-trip retro**
-- After `endDate` passes, send a bot message (or in-app prompt): "How did packing go?"
-- Quick replies: "Packed too much 🧳", "Just right ✅", "Forgot things 😅"
-- Store response on trip (`retro_rating` column + `retro_note` text)
-- Use retro signal to personalise future lists (e.g. flag items marked "always forget", suppress items marked "never used")
-- Cron job checks for trips that ended yesterday and dispatches retro prompt via connected channels
-- New DB columns: `trips.retro_rating` (enum: too_much | just_right | forgot_things), `trips.retro_note`
+**A8 — Post-trip retro** ✅ completed
+- Cron dispatches 3-button prompt (Telegram inline KB / WhatsApp quick-reply) the day after `endDate`
+- FSM: `RETRO_PROMPTED` → `RETRO_NOTE_PROMPTED` → `IDLE`; saves rating + optional free-text note
+- Web: `RetroPrompt` banner on trip detail page for past trips with no rating
+- API: `PATCH /api/trips/[id]/retro`
+- Personalisation: `oftenSkipped` flag on items unchecked in ≥2 of last 3 same-type trips; `🧠` tip banner when pattern detected; `💤 You often skip this` label in checklist UI
+- DB: `retro_rating` enum, `retro_note`, `retro_prompted_at` on `trips`; `often_skipped` on `checklist_items`
+- New files: `lib/domain/retro/retro.ts`, `lib/domain/retro/dispatch.ts`, `app/api/trips/[id]/retro/route.ts`, `components/trips/retro-prompt.tsx`
 
 **A9 — List reuse ("use my previous list")**
 - On trip creation (web + bot), detect if user has a prior trip of the same type
