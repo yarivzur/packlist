@@ -270,7 +270,7 @@ export default function HowToPage() {
                 subtitle="@PackListBeBot"
               >
                 <StepList steps={[
-                  { title: "Sign in to PackList", body: <>Go to <a href={`${APP_URL}/login`} className="underline underline-offset-4 hover:text-foreground">app.packlist.be</a> and sign in with Google.</> },
+                  { title: "Sign in to PackList", body: <>Go to <a href={`${APP_URL}/login`} className="underline underline-offset-4 hover:text-foreground">app.packlist.be</a> and sign in.</> },
                   { title: "Open Settings", body: "Tap your avatar or navigate to Settings. Scroll to the \"Connected channels\" section." },
                   { title: "Click \"Connect Telegram\"", body: "A button opens Telegram with @PackListBeBot pre-selected." },
                   { title: "Press Start in the bot chat", body: "Telegram opens a chat with @PackListBeBot. Hit Start (or send /start) — the bot confirms your account is linked. ✅" },
@@ -289,7 +289,7 @@ export default function HowToPage() {
                 title="Connecting WhatsApp"
               >
                 <StepList steps={[
-                  { title: "Sign in to PackList", body: <>Go to <a href={`${APP_URL}/login`} className="underline underline-offset-4 hover:text-foreground">app.packlist.be</a> and sign in with Google.</> },
+                  { title: "Sign in to PackList", body: <>Go to <a href={`${APP_URL}/login`} className="underline underline-offset-4 hover:text-foreground">app.packlist.be</a> and sign in.</> },
                   { title: "Open Settings", body: "Tap your avatar or navigate to Settings. Scroll to the \"Connected channels\" section." },
                   { title: "Click \"Connect WhatsApp\"", body: "This opens WhatsApp (or wa.me on desktop) with a pre-filled message containing your personal link code. Don't change the message." },
                   { title: "Send the pre-filled message", body: "Just tap Send — PackList reads your link code and ties the WhatsApp number to your account. ✅" },
