@@ -321,7 +321,7 @@ function CategoryGroup({ category, items, isReview, onToggle, onDelete }: Catego
         <ul className="divide-y">
           {items.map((item) => {
             const qty = quantities[item.id] ?? item.quantity;
-            const showQtyControls = item.rationale !== null || qty > 1;
+            const showQtyControls = item.category === "clothing" || qty > 1;
             // Show delete on hover: always in review mode, or for custom items otherwise
             const showDelete = isReview || item.sourceRule === "custom";
 
