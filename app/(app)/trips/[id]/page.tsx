@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { DeleteTripRedirectButton } from "@/components/trips/delete-trip-redirect-button";
+import { RetroPrompt } from "@/components/trips/retro-prompt";
 import { CATEGORY_ORDER } from "@/lib/domain/checklists/templates";
 import type { ChecklistCategory } from "@/lib/domain/checklists/templates";
 import { countryCodeToFlag } from "@/lib/utils/country-flag";
 import type { WeatherData } from "@/lib/domain/weather/open-meteo";
 import type { VisaCheckResult } from "@/lib/domain/visa/visa-check";
+import { getUserPackingHistory, getRetroTip } from "@/lib/domain/retro/retro";
 
 function getWeatherTip(bucket: string, rainProbability: number): string {
   const highRain = rainProbability > 0.5;
@@ -60,6 +62,14 @@ export default async function TripDetailPage({
   const weather = trip.weatherDataJson as WeatherData | null;
   const visa = trip.visaDataJson as VisaCheckResult | null;
   const flag = countryCodeToFlag(trip.destinationCountry);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const tripEnded = trip.endDate < today;
+  const needsRetro = tripEnded && !trip.retroRating;
+
+  // Personalisation tip from past retro ratings
+  const history = await getUserPackingHistory(session!.user!.id!, trip.type, trip.id).catch(() => null);
+  const retroTip = history ? getRetroTip(history.retroRatings, trip.type) : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
@@ -158,6 +168,17 @@ export default async function TripDetailPage({
           <p className="text-sm text-center font-medium text-primary">🎉 You&apos;re all packed! Go enjoy every second.</p>
         )}
       </div>
+
+      {/* Personalisation tip from past retro ratings */}
+      {retroTip && (
+        <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 px-4 py-3 flex items-start gap-3">
+          <span className="text-lg shrink-0 mt-0.5" aria-hidden>🧠</span>
+          <p className="text-sm text-amber-800 dark:text-amber-300">{retroTip}</p>
+        </div>
+      )}
+
+      {/* Post-trip retro prompt */}
+      {needsRetro && <RetroPrompt tripId={trip.id} />}
 
       {/* Checklist */}
       <ChecklistView tripId={trip.id} grouped={grouped} reviewed={trip.reviewed} />

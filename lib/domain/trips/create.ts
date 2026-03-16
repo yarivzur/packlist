@@ -4,6 +4,7 @@ import { fetchWeatherForTrip, geocodeDestination } from "@/lib/domain/weather/op
 import { generateChecklist, detectIfInternational } from "@/lib/domain/checklists/rules-engine";
 import { checkVisa } from "@/lib/domain/visa/visa-check";
 import { scheduleRemindersForTrip } from "@/lib/domain/reminders/schedule";
+import { getUserPackingHistory } from "@/lib/domain/retro/retro";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export interface CreateTripInput {
@@ -68,6 +69,13 @@ export async function createTrip(input: CreateTripInput) {
   const durationDays =
     differenceInCalendarDays(parseISO(input.endDate), parseISO(input.startDate)) + 1;
 
+  // Fetch packing history to personalise the checklist (non-blocking on error)
+  const userHistory = await getUserPackingHistory(
+    input.userId,
+    input.type,
+    trip.id
+  ).catch(() => null);
+
   const generatedItems = generateChecklist({
     tripType: input.type,
     durationDays,
@@ -78,6 +86,7 @@ export async function createTrip(input: CreateTripInput) {
     destinationCountry,
     visaResult,
     userHomeCountry: input.userHomeCountry,
+    userHistory,
   });
 
   // 7. Insert checklist items
@@ -91,6 +100,7 @@ export async function createTrip(input: CreateTripInput) {
         sourceRule: item.sourceRule,
         quantity: item.quantity,
         rationale: item.rationale,
+        oftenSkipped: item.oftenSkipped ?? false,
         done: false,
       }))
     );

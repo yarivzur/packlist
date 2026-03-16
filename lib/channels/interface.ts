@@ -35,7 +35,9 @@ export type ConversationState =
   | "ASKING_START_DATE"
   | "ASKING_END_DATE"
   | "ASKING_BAGGAGE"
-  | "VIEWING_CHECKLIST";
+  | "VIEWING_CHECKLIST"
+  | "RETRO_PROMPTED"
+  | "RETRO_NOTE_PROMPTED";
 
 export interface ConversationData {
   tripType?: "business" | "leisure" | "mixed";
@@ -44,4 +46,5 @@ export interface ConversationData {
   endDate?: string;
   baggage?: "carry-on" | "checked" | "unknown";
   viewingTripId?: string;
+  retroTripId?: string; // trip awaiting a retro rating reply
 }

@@ -51,6 +51,12 @@ export const reminderStatusEnum = pgEnum("reminder_status", [
 
 export const botChannelEnum = pgEnum("bot_channel", ["telegram", "whatsapp"]);
 
+export const retroRatingEnum = pgEnum("retro_rating", [
+  "too_much",
+  "just_right",
+  "forgot_things",
+]);
+
 // ─── Auth.js tables ───────────────────────────────────────────────────────────
 
 export const users = pgTable("users", {
@@ -118,6 +124,9 @@ export const trips = pgTable("trips", {
   reviewed: boolean("reviewed").notNull().default(false),
   weatherDataJson: jsonb("weather_data_json"),
   visaDataJson: jsonb("visa_data_json"),              // cached visa check result
+  retroRating: retroRatingEnum("retro_rating"),       // null until user responds
+  retroNote: text("retro_note"),                      // optional free-text follow-up
+  retroPromptedAt: timestamp("retro_prompted_at", { mode: "date" }), // set when prompt sent
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -134,6 +143,7 @@ export const checklistItems = pgTable("checklist_items", {
   rationale: text("rationale"), // human-readable explanation e.g. "7-day trip → 6 t-shirts"
   sourceRule: text("source_rule").notNull().default("custom"), // template id or 'custom'
   priority: integer("priority").notNull().default(50),
+  oftenSkipped: boolean("often_skipped").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dispatchDueReminders } from "@/lib/domain/reminders/dispatch";
+import { dispatchRetroPrompts } from "@/lib/domain/retro/dispatch";
 
 /**
  * Vercel Cron endpoint — called every hour via vercel.json.
@@ -16,16 +17,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const results = await dispatchDueReminders();
-    const sent = results.filter((r) => r.success).length;
-    const failed = results.filter((r) => !r.success).length;
+    const [reminderResults, retroResults] = await Promise.all([
+      dispatchDueReminders(),
+      dispatchRetroPrompts(),
+    ]);
+
+    const sent = reminderResults.filter((r) => r.success).length;
+    const failed = reminderResults.filter((r) => !r.success).length;
+    const retroNotified = retroResults.filter((r) => r.channelsNotified.length > 0).length;
+    const retroSkipped = retroResults.filter((r) => r.skipped).length;
 
     return NextResponse.json({
       ok: true,
-      processed: results.length,
-      sent,
-      failed,
-      results,
+      reminders: { processed: reminderResults.length, sent, failed },
+      retro: { processed: retroResults.length, notified: retroNotified, skipped: retroSkipped },
     });
   } catch (err) {
     console.error("[cron] send-reminders failed:", err);

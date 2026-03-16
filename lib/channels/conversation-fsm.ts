@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { botSessions, checklistItems, telegramLinkTokens, whatsappLinkTokens, trips, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createTrip } from "@/lib/domain/trips/create";
+import { parseRetroRating, RETRO_NOTE_PROMPT } from "@/lib/domain/retro/retro";
 import type {
   Channel,
   ConversationState,
@@ -402,6 +403,60 @@ async function processState(
         nextData: {},
         reply: {
           text: "Type /newtrip to create a new trip.",
+          buttons: [[{ label: "✈️ New trip", data: "/newtrip" }]],
+        },
+      };
+    }
+
+    case "RETRO_PROMPTED": {
+      const tripId = data.retroTripId;
+      const rating = parseRetroRating(input);
+
+      if (!rating || !tripId) {
+        return {
+          nextState: "RETRO_PROMPTED",
+          nextData: data,
+          reply: {
+            text: "Please tap one of the options above, or reply 1, 2, or 3.",
+          },
+        };
+      }
+
+      // Save the rating to the DB
+      await db
+        .update(trips)
+        .set({ retroRating: rating, updatedAt: new Date() })
+        .where(eq(trips.id, tripId));
+
+      return {
+        nextState: "RETRO_NOTE_PROMPTED",
+        nextData: { retroTripId: tripId },
+        reply: RETRO_NOTE_PROMPT,
+      };
+    }
+
+    case "RETRO_NOTE_PROMPTED": {
+      const tripId = data.retroTripId;
+      const isSkip =
+        input.toLowerCase() === "skip" ||
+        input.toLowerCase() === "no" ||
+        input.trim() === "";
+
+      if (tripId && !isSkip) {
+        // Save the free-text note
+        await db
+          .update(trips)
+          .set({ retroNote: input.trim(), updatedAt: new Date() })
+          .where(eq(trips.id, tripId));
+      }
+
+      return {
+        nextState: "IDLE",
+        nextData: {},
+        reply: {
+          text: isSkip
+            ? "Got it! Safe travels next time. ✈️\n\nType /newtrip whenever you're ready to plan your next trip."
+            : "Noted! I'll use that to personalise your next list. ✈️\n\nType /newtrip whenever you're ready to plan your next trip.",
           buttons: [[{ label: "✈️ New trip", data: "/newtrip" }]],
         },
       };

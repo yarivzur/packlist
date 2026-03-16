@@ -2,6 +2,7 @@ import type { WeatherData } from "@/lib/domain/weather/open-meteo";
 import { visaChecklistItems, type VisaCheckResult } from "@/lib/domain/visa/visa-check";
 import { getCurrencyForCountry } from "@/lib/domain/currency/currency-lookup";
 import { getAdapterInfo } from "@/lib/domain/power/plug-lookup";
+import type { UserPackingHistory } from "@/lib/domain/retro/retro";
 import {
   BASE_ITEMS,
   INTERNATIONAL_ITEMS,
@@ -28,6 +29,8 @@ export interface RulesInput {
   visaResult?: VisaCheckResult | null;
   /** User's home country (ISO 3166-1 alpha-2). Used for power adapter check. */
   userHomeCountry?: string | null;
+  /** Packing history for personalisation — flags often-skipped items. */
+  userHistory?: UserPackingHistory | null;
 }
 
 export interface GeneratedItem {
@@ -37,6 +40,8 @@ export interface GeneratedItem {
   sourceRule: string;
   quantity: number;
   rationale: string | null;
+  /** True when this item has been consistently skipped on past trips of the same type. */
+  oftenSkipped?: boolean;
 }
 
 const RAIN_THRESHOLD = 0.35; // 35% max daily precipitation probability
@@ -74,6 +79,8 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
     deduplicated = deduplicateItems(items);
   }
 
+  const oftenSkippedRules = new Set(input.userHistory?.neverUsedItemRules ?? []);
+
   const templateResults = deduplicated
     .sort((a, b) => a.priority - b.priority)
     .map((item) => {
@@ -95,6 +102,7 @@ export function generateChecklist(input: RulesInput): GeneratedItem[] {
         sourceRule: item.id,
         quantity,
         rationale,
+        ...(oftenSkippedRules.has(item.id) ? { oftenSkipped: true } : {}),
       };
     });
 

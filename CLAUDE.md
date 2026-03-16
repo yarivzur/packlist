@@ -198,6 +198,17 @@ lib/channels/
 - Same Next.js repo: add `app/(marketing)/page.tsx`, serve from `www.packlist.be` Vercel project
 - SEO basics: OG tags, sitemap, robots.txt
 
+**O4 — Rename Telegram bot to match app name**
+- Current bot username: `@RashmatzBot` — should match the final app name (see O1)
+- Steps:
+  1. Open Telegram → BotFather → `/mybots` → select the bot
+  2. `Edit Bot` → `Edit Name` → set display name
+  3. `Edit Bot` → `Edit Username` → set new `@username` (e.g. `@PackListBot`)
+  4. Update Vercel env var: `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=<new_username>`
+  5. Update `scripts/register-telegram-webhook.ts` if it hardcodes the old name
+  6. Redeploy (`vercel --prod`)
+- Note: existing linked users are unaffected (links are by Telegram user ID, not bot username); deep links to old username will break
+
 **M6 — PWA + Polish**
 - `manifest.json`, service worker, install prompt
 - Error states + loading skeletons

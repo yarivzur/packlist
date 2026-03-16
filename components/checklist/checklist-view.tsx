@@ -194,13 +194,20 @@ export function ChecklistView({ tripId, grouped, reviewed }: ChecklistViewProps)
                   >
                     {item.done && <Check className="h-3 w-3" />}
                   </button>
-                  <span
-                    className={cn(
-                      "flex-1 text-sm leading-5",
-                      item.done && !isReview && "line-through text-muted-foreground"
+                  <span className="flex-1 min-w-0">
+                    <span
+                      className={cn(
+                        "text-sm leading-5 block",
+                        item.done && !isReview && "line-through text-muted-foreground"
+                      )}
+                    >
+                      {item.text}
+                    </span>
+                    {item.oftenSkipped && (
+                      <span className="text-xs text-amber-600 dark:text-amber-500 leading-4">
+                        💤 You often skip this
+                      </span>
                     )}
-                  >
-                    {item.text}
                   </span>
                   {/* Category pill */}
                   <span className="text-xs text-muted-foreground shrink-0">
@@ -374,6 +381,11 @@ function CategoryGroup({ category, items, isReview, onToggle, onDelete }: Catego
                       </div>
                     );
                   })()}
+                  {item.oftenSkipped && (
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5 leading-4">
+                      💤 You often skip this
+                    </p>
+                  )}
                   {item.rationale && (
                     <p className="text-xs text-muted-foreground mt-0.5 leading-4">
                       {item.rationale}
