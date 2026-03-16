@@ -321,7 +321,7 @@ export default function HowToPage() {
                     answer="It's a good starting point but not a legal source. Coverage is 13 nationalities × 50+ destinations. Always verify entry requirements with the official embassy or consulate before you travel."
                   />
                   <FaqItem
-                    question="Why does my list show \"based on last year's climate\"?"
+                    question="Why does my list show &quot;based on last year&apos;s climate&quot;?"
                     answer="Weather forecasts only go 16 days out. For trips further ahead, PackList uses the same date range from the previous year's archive as a proxy for typical seasonal weather."
                   />
                   <FaqItem
