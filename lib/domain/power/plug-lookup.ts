@@ -136,11 +136,11 @@ const PLUG_DATA: Record<string, PlugInfo> = {
   DZ: { plugs: ["C", "F"], voltage: 230 },
 
   // ── South / Southeast Asia ────────────────────────────────────────────
-  IN: { plugs: ["C", "D", "M"], voltage: 230 },
-  PK: { plugs: ["C", "D"], voltage: 230 },
-  BD: { plugs: ["C", "D", "G"], voltage: 220 },
+  IN: { plugs: ["D", "M"], voltage: 230 },   // C fits physically but D/M are the actual standard
+  PK: { plugs: ["D"], voltage: 230 },         // Type D is the actual standard; C sometimes present
+  BD: { plugs: ["D", "G"], voltage: 220 },
   LK: { plugs: ["D", "G", "M"], voltage: 230 },
-  NP: { plugs: ["C", "D", "M"], voltage: 230 },
+  NP: { plugs: ["D", "M"], voltage: 230 },    // C sometimes present, D/M are standard
   TH: { plugs: ["A", "B", "C"], voltage: 220 },
   VN: { plugs: ["A", "C", "F"], voltage: 220 },
   ID: { plugs: ["C", "F"], voltage: 230 },
