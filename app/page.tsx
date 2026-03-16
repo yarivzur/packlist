@@ -160,7 +160,7 @@ export default function LandingPage() {
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
         <div className="mx-auto max-w-5xl px-6">
-          <p>© {new Date().getFullYear()} PackList · <Link href={APP_URL} className="hover:text-foreground underline underline-offset-4">app.packlist.be</Link> · <a href="mailto:support@packlist.be" className="hover:text-foreground underline underline-offset-4">support@packlist.be</a></p>
+          <p>© {new Date().getFullYear()} PackList · <Link href={APP_URL} className="hover:text-foreground underline underline-offset-4">app.packlist.be</Link> · <a href="mailto:support@packlist.be" className="hover:text-foreground underline underline-offset-4">support@packlist.be</a> · <a href="https://github.com/yarivzur/packlist" target="_blank" rel="noopener noreferrer" className="hover:text-foreground underline underline-offset-4">GitHub</a></p>
         </div>
       </footer>
 
