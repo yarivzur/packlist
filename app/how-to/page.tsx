@@ -155,7 +155,7 @@ export default function HowToPage() {
                 </p>
                 <FeatureList items={[
                   { title: "Live forecast (trips up to 16 days out)", body: "The standard 16-day forecast is fetched at trip creation time. If the average high exceeds 20 °C, warm-weather items are added automatically — sunscreen, sunglasses, a hat, swimwear." },
-                  { title: "Historical climate (trips further than 16 days)", body: "For trips further in the future, PackList falls back to the same date range from the previous year's archive data. Your checklist page shows a small note: "Based on last year's climate." Accuracy is good for typical seasonal weather; it won't predict a freak heatwave." },
+                  { title: "Historical climate (trips further than 16 days)", body: "For trips further in the future, PackList falls back to the same date range from the previous year\u2019s archive data. Your checklist page shows a small note: \u201cBased on last year\u2019s climate.\u201d Accuracy is good for typical seasonal weather; it won\u2019t predict a freak heatwave." },
                   { title: "No weather data", body: "If the fetch fails entirely (rare network issue), your list is generated without weather adjustments. You can always add items manually." },
                 ]} />
               </Section>
