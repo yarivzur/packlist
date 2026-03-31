@@ -8,7 +8,8 @@ export default auth((req) => {
   const publicPaths = ["/", "/login", "/api/auth", "/api/webhooks", "/api/cron"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
-  if (!isLoggedIn && !isPublic) {
+  const hasBearer = req.headers.get("authorization")?.startsWith("Bearer ");
+  if (!isLoggedIn && !isPublic && !hasBearer) {
     return Response.redirect(new URL("/login", req.url));
   }
 });

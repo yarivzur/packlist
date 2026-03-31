@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { User } from "@/lib/db/schema";
-import { Loader2, Sun, Moon, Monitor } from "lucide-react";
+import type { User, ApiKey } from "@/lib/db/schema";
+import { Loader2, Sun, Moon, Monitor, Copy, Check, Trash2, Key } from "lucide-react";
 
 // Common IANA timezone list
 const TIMEZONES = [
@@ -95,9 +95,10 @@ interface SettingsFormProps {
   user: User;
   telegramConnected: boolean;
   whatsappConnected: boolean;
+  apiKeys: Pick<ApiKey, "id" | "name" | "createdAt" | "lastUsedAt">[];
 }
 
-export function SettingsForm({ user, telegramConnected, whatsappConnected }: SettingsFormProps) {
+export function SettingsForm({ user, telegramConnected, whatsappConnected, apiKeys: initialApiKeys }: SettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [timezone, setTimezone] = useState(user.timezone ?? "UTC");
@@ -289,6 +290,9 @@ export function SettingsForm({ user, telegramConnected, whatsappConnected }: Set
           <WhatsAppConnectRow connected={whatsappConnected} />
         </div>
       </div>
+
+      {/* API Keys */}
+      <ApiKeysSection initialKeys={initialApiKeys} />
     </div>
   );
 }
@@ -383,6 +387,142 @@ function WhatsAppConnectRow({ connected }: { connected: boolean }) {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── API Keys section ─────────────────────────────────────────────────────────
+
+function ApiKeysSection({
+  initialKeys,
+}: {
+  initialKeys: Pick<ApiKey, "id" | "name" | "createdAt" | "lastUsedAt">[];
+}) {
+  const [keys, setKeys] = useState(initialKeys);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newRawKey, setNewRawKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
+
+  const handleCreate = async () => {
+    if (!newKeyName.trim()) return;
+    setCreating(true);
+    try {
+      const res = await fetch("/api/users/me/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newKeyName.trim() }),
+      });
+      const data = await res.json() as { id: string; name: string; createdAt: string; key: string };
+      setKeys((prev) => [{ id: data.id, name: data.name, createdAt: new Date(data.createdAt), lastUsedAt: null }, ...prev]);
+      setNewRawKey(data.key);
+      setNewKeyName("");
+    } catch {
+      // ignore
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!newRawKey) return;
+    await navigator.clipboard.writeText(newRawKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRevoke = async (id: string) => {
+    setRevoking(id);
+    try {
+      await fetch(`/api/users/me/api-keys/${id}`, { method: "DELETE" });
+      setKeys((prev) => prev.filter((k) => k.id !== id));
+      setConfirmRevoke(null);
+    } catch {
+      // ignore
+    } finally {
+      setRevoking(null);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <Key className="h-4 w-4 text-muted-foreground" />
+        <h2 className="font-semibold">API Keys</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Generate keys to access your PackList data from scripts or AI agents.
+      </p>
+
+      {/* New key revealed — show once */}
+      {newRawKey && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 space-y-2">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
+            Copy this key now — it won&apos;t be shown again.
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded bg-background border px-2 py-1.5 text-xs font-mono break-all">
+              {newRawKey}
+            </code>
+            <Button size="sm" variant="outline" onClick={handleCopy} className="shrink-0 h-8 px-2">
+              {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setNewRawKey(null)} className="h-7 text-xs text-muted-foreground">
+            I&apos;ve saved it, dismiss
+          </Button>
+        </div>
+      )}
+
+      {/* Existing keys */}
+      {keys.length > 0 && (
+        <div className="space-y-2">
+          {keys.map((k) => (
+            <div key={k.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+              <div>
+                <p className="font-medium">{k.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Created {new Date(k.createdAt).toLocaleDateString()}
+                  {k.lastUsedAt && ` · Last used ${new Date(k.lastUsedAt).toLocaleDateString()}`}
+                </p>
+              </div>
+              {confirmRevoke === k.id ? (
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="destructive" onClick={() => handleRevoke(k.id)} disabled={revoking === k.id} className="h-7 text-xs px-2">
+                    {revoking === k.id && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                    Revoke
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmRevoke(null)} className="h-7 text-xs px-2">
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setConfirmRevoke(k.id)} className="h-7 px-2 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Generate new key */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Key name (e.g. travel agent)"
+          value={newKeyName}
+          onChange={(e) => setNewKeyName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <Button onClick={handleCreate} disabled={creating || !newKeyName.trim()} size="sm">
+          {creating && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+          Generate
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveUser } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -15,8 +15,8 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const resolved = await resolveUser(req);
+  if (!resolved) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest) {
   const [user] = await db
     .update(users)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(users.id, session.user.id))
+    .where(eq(users.id, resolved.userId))
     .returning();
 
   return NextResponse.json(user);

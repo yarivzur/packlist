@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveUser } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { checklistItems, trips } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -15,8 +15,8 @@ const addItemSchema = z.object({
 
 // GET /api/checklist-items?tripId=xxx
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const resolved = await resolveUser(req);
+  if (!resolved) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const [trip] = await db
     .select()
     .from(trips)
-    .where(and(eq(trips.id, tripId), eq(trips.userId, session.user.id)));
+    .where(and(eq(trips.id, tripId), eq(trips.userId, resolved.userId)));
 
   if (!trip) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/checklist-items — add custom item
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const resolved = await resolveUser(req);
+  if (!resolved) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     .select()
     .from(trips)
     .where(
-      and(eq(trips.id, parsed.data.tripId), eq(trips.userId, session.user.id))
+      and(eq(trips.id, parsed.data.tripId), eq(trips.userId, resolved.userId))
     );
 
   if (!trip) {

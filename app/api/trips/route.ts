@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveUser } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { trips, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -16,24 +16,24 @@ const createTripSchema = z.object({
   baggageMode: z.enum(["carry-on", "checked", "unknown"]).default("unknown"),
 });
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
+export async function GET(req: NextRequest) {
+  const resolved = await resolveUser(req);
+  if (!resolved) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const userTrips = await db
     .select()
     .from(trips)
-    .where(eq(trips.userId, session.user.id))
+    .where(eq(trips.userId, resolved.userId))
     .orderBy(desc(trips.createdAt));
 
   return NextResponse.json(userTrips);
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const resolved = await resolveUser(req);
+  if (!resolved) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -56,10 +56,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Fetch user's nationality + homeCountry for visa / power-adapter checks
-  const [user] = await db.select().from(users).where(eq(users.id, session.user.id));
+  const [user] = await db.select().from(users).where(eq(users.id, resolved.userId));
 
   const input: CreateTripInput = {
-    userId: session.user.id,
+    userId: resolved.userId,
     ...parsed.data,
     userNationality: user?.nationality ?? null,
     userHomeCountry: user?.homeCountry ?? null,

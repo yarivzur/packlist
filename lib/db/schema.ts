@@ -190,6 +190,17 @@ export const whatsappLinkTokens = pgTable("whatsapp_link_tokens", {
   usedAt: timestamp("used_at", { mode: "date" }),
 });
 
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  keyHash: text("key_hash").notNull().unique(), // SHA-256 hex of raw key
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at", { mode: "date" }),
+});
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -197,6 +208,8 @@ export type Trip = typeof trips.$inferSelect;
 export type ChecklistItem = typeof checklistItems.$inferSelect;
 export type Reminder = typeof reminders.$inferSelect;
 export type BotSession = typeof botSessions.$inferSelect;
+
+export type ApiKey = typeof apiKeys.$inferSelect;
 
 export type NewTrip = typeof trips.$inferInsert;
 export type NewChecklistItem = typeof checklistItems.$inferInsert;

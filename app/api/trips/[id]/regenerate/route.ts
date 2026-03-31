@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { resolveUser } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { trips, checklistItems, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -10,11 +10,11 @@ import { getUserPackingHistory } from "@/lib/domain/retro/retro";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const resolved = await resolveUser(req);
+  if (!resolved) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,14 +24,14 @@ export async function POST(
   const [trip] = await db
     .select()
     .from(trips)
-    .where(and(eq(trips.id, id), eq(trips.userId, session.user.id)));
+    .where(and(eq(trips.id, id), eq(trips.userId, resolved.userId)));
 
   if (!trip) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Load user profile (for nationality + homeCountry)
-  const [user] = await db.select().from(users).where(eq(users.id, session.user.id));
+  const [user] = await db.select().from(users).where(eq(users.id, resolved.userId));
 
   // Refresh weather
   const weather = await fetchWeatherForTrip(
@@ -60,7 +60,7 @@ export async function POST(
 
   // Packing history for personalisation
   const userHistory = await getUserPackingHistory(
-    session.user.id,
+    resolved.userId,
     trip.type,
     trip.id
   ).catch(() => null);
