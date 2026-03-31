@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveUser } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { trips, users } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc, gte, lt } from "drizzle-orm";
 import { createTrip, type CreateTripInput } from "@/lib/domain/trips/create";
 import { z } from "zod";
 
@@ -22,11 +22,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // ?filter=upcoming  → endDate >= today (current + future trips)
+  // ?filter=past      → endDate < today
+  // ?filter=all       → no date filter (default)
+  const filter = req.nextUrl.searchParams.get("filter") ?? "all";
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  const dateFilter =
+    filter === "upcoming" ? gte(trips.endDate, today) :
+    filter === "past"     ? lt(trips.endDate, today)  :
+    undefined;
+
   const userTrips = await db
     .select()
     .from(trips)
-    .where(eq(trips.userId, resolved.userId))
-    .orderBy(desc(trips.createdAt));
+    .where(dateFilter ? and(eq(trips.userId, resolved.userId), dateFilter) : eq(trips.userId, resolved.userId))
+    .orderBy(desc(trips.startDate));
 
   return NextResponse.json(userTrips);
 }

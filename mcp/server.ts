@@ -70,9 +70,14 @@ const server = new McpServer({ name: "packlist", version: "1.0.0" });
 
 server.tool(
   "list_trips",
-  "List all trips for the authenticated user, sorted by creation date (newest first).",
-  {},
-  async () => text(await api("GET", "/api/trips"))
+  "List trips for the authenticated user. Use filter='upcoming' for current and future trips, 'past' for completed trips, or 'all' (default) for everything. Sorted by start date.",
+  {
+    filter: z
+      .enum(["all", "upcoming", "past"])
+      .default("all")
+      .describe("'upcoming' = endDate >= today, 'past' = endDate < today, 'all' = no filter"),
+  },
+  async ({ filter }) => text(await api("GET", `/api/trips?filter=${filter}`))
 );
 
 // ── create_trip ────────────────────────────────────────────────────────────────
