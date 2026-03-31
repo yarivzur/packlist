@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   Bell,
+  Bot,
   Brain,
   CloudSun,
   Globe,
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { id: "retro",             label: "Post-trip retro" },
   { id: "telegram",          label: "Connecting Telegram" },
   { id: "whatsapp",          label: "Connecting WhatsApp" },
+  { id: "mcp",               label: "AI agents & MCP" },
   { id: "faq",               label: "FAQ" },
 ];
 
@@ -301,6 +303,94 @@ export default function HowToPage() {
                 </Callout>
               </Section>
 
+              {/* ── AI agents & MCP ────────────────────────────────────────── */}
+              <Section
+                id="mcp"
+                icon={<Bot className="h-5 w-5 text-primary" />}
+                title="AI agents & MCP"
+                subtitle="Let an AI agent manage your trips"
+              >
+                <p>
+                  PackList exposes a <strong>Model Context Protocol (MCP) server</strong> that
+                  lets any MCP-compatible AI agent — like{" "}
+                  <a href="https://github.com/openclaw/openclaw" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">OpenClaw</a>{" "}
+                  or{" "}
+                  <a href="https://claude.ai/claude-code" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">Claude Code</a>{" "}
+                  — create trips, read checklists, and tick items on your behalf, without
+                  ever opening the app.
+                </p>
+
+                <h3 className="font-semibold text-foreground pt-2">Step 1 — Generate an API key</h3>
+                <StepList steps={[
+                  { title: "Sign in", body: <>Go to <a href={`${APP_URL}/settings`} className="underline underline-offset-4 hover:text-foreground">Settings</a> in the app.</> },
+                  { title: "API Keys section", body: "Scroll to the API Keys card at the bottom of Settings." },
+                  { title: "Name and generate", body: "Give your key a name (e.g. \"travel agent\") and click Generate." },
+                  { title: "Copy the key", body: "The key starts with pk_... and is shown exactly once. Copy it somewhere safe — it can't be retrieved later. You can revoke and create a new one at any time." },
+                ]} />
+
+                <h3 className="font-semibold text-foreground pt-2">Step 2 — Run the MCP server</h3>
+                <p>
+                  The MCP server lives in the PackList repository. Clone it to the machine
+                  where your agent runs:
+                </p>
+                <CodeBlock>{`git clone https://github.com/yarivzur/packlist
+cd packlist
+npm install`}</CodeBlock>
+                <p>Then start the server, passing your API key:</p>
+                <CodeBlock>{`PACKLIST_API_URL=https://app.packlist.be \\
+PACKLIST_API_KEY=pk_... \\
+npx tsx mcp/server.ts`}</CodeBlock>
+                <p>
+                  The server communicates over <strong>stdio</strong> — your agent framework
+                  spawns it as a child process. You don&apos;t need to keep it running manually.
+                </p>
+
+                <h3 className="font-semibold text-foreground pt-2">Step 3 — Register with your agent</h3>
+                <p><strong>OpenClaw:</strong></p>
+                <CodeBlock>{`openclaw mcp set packlist '{
+  "type": "stdio",
+  "command": "npx",
+  "args": ["tsx", "/absolute/path/to/packlist/mcp/server.ts"],
+  "env": {
+    "PACKLIST_API_URL": "https://app.packlist.be",
+    "PACKLIST_API_KEY": "pk_..."
+  }
+}'`}</CodeBlock>
+                <p><strong>Claude Code</strong> — add to <code className="rounded bg-secondary px-1 py-0.5 text-xs">~/.claude/settings.json</code>:</p>
+                <CodeBlock>{`{
+  "mcpServers": {
+    "packlist": {
+      "command": "npx",
+      "args": ["tsx", "/absolute/path/to/packlist/mcp/server.ts"],
+      "env": {
+        "PACKLIST_API_URL": "https://app.packlist.be",
+        "PACKLIST_API_KEY": "pk_..."
+      }
+    }
+  }
+}`}</CodeBlock>
+
+                <h3 className="font-semibold text-foreground pt-2">Available tools</h3>
+                <FeatureList items={[
+                  { title: "list_trips", body: <>Lists your trips. Supports a <code className="rounded bg-secondary px-1 py-0.5 text-xs">filter</code> parameter: <code className="rounded bg-secondary px-1 py-0.5 text-xs">upcoming</code> (current &amp; future), <code className="rounded bg-secondary px-1 py-0.5 text-xs">past</code>, or <code className="rounded bg-secondary px-1 py-0.5 text-xs">all</code> (default).</> },
+                  { title: "create_trip", body: "Creates a new trip — triggers weather fetch, visa check, and checklist generation automatically." },
+                  { title: "get_trip", body: "Returns full trip details including cached weather and visa data." },
+                  { title: "get_checklist", body: "Returns all checklist items for a trip, with category, done status, quantity, and rationale." },
+                  { title: "toggle_item", body: "Marks a checklist item as packed or unpacked." },
+                  { title: "add_item", body: "Adds a custom item to a trip's checklist." },
+                  { title: "delete_item", body: "Removes an item from a checklist." },
+                  { title: "delete_trip", body: "Permanently deletes a trip and all its items." },
+                  { title: "regenerate_checklist", body: "Re-runs the rules engine for a trip — useful after updating your profile settings." },
+                  { title: "update_profile", body: "Updates your nationality, home country, or timezone." },
+                ]} />
+
+                <Callout>
+                  API keys are scoped to your account — they give access only to your own
+                  trips. You can generate multiple keys (one per agent or device) and revoke
+                  any of them individually from Settings at any time.
+                </Callout>
+              </Section>
+
               {/* ── FAQ ────────────────────────────────────────────────────── */}
               <Section
                 id="faq"
@@ -453,5 +543,13 @@ function Callout({ children }: { children: React.ReactNode }) {
     <div className="rounded-lg border border-border bg-secondary/60 px-4 py-3 text-sm">
       {children}
     </div>
+  );
+}
+
+function CodeBlock({ children }: { children: string }) {
+  return (
+    <pre className="overflow-x-auto rounded-lg border border-border bg-secondary/60 px-4 py-3 text-xs font-mono leading-relaxed whitespace-pre">
+      {children}
+    </pre>
   );
 }
