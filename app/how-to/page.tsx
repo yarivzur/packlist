@@ -169,7 +169,7 @@ export default function HowToPage() {
                 title="Visa & documents"
               >
                 <p>
-                  If you've set your nationality in Settings, PackList checks whether you
+                  If you&apos;ve set your nationality in Settings, PackList checks whether you
                   need a visa for your destination and shows the result as a badge on your
                   trip page.
                 </p>
