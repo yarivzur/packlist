@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { User, ApiKey } from "@/lib/db/schema";
 import { Loader2, Sun, Moon, Monitor, Copy, Check, Trash2, Key } from "lucide-react";
+
+// Hydration-safe "mounted" flag: false during SSR, true on the client
+const subscribeNoop = () => () => {};
 
 // Common IANA timezone list
 const TIMEZONES = [
@@ -106,10 +109,9 @@ export function SettingsForm({ user, telegramConnected, whatsappConnected, apiKe
   const [homeCountry, setHomeCountry] = useState(user.homeCountry ?? "");
   const [saved, setSaved] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
   useEffect(() => {
-    setMounted(true);
     // Sync DB theme preference on first mount (handles cross-device persistence)
     if (user.theme && user.theme !== "system") {
       setTheme(user.theme);
